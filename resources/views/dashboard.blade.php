@@ -24,7 +24,7 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-white mb-2">My Documents</h1>
-        <p class="text-gray-400">View and manage your formatted court documents.</p>
+        <p class="text-gray-400">Vie and manage your formatted court documents.</p>
     </div>
 
     <!-- Stats Cards -->
