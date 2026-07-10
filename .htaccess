@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If the file or directory exists under the public folder, serve it directly
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/tenth-lining/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/tenth-lining/public/$1 -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Otherwise, forward to public/index.php with path info attached
+    RewriteRule ^$ public/index.php [L]
+    
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/tenth-lining/public/
+    RewriteRule ^(.*)$ public/index.php/$1 [L]
+</IfModule>
