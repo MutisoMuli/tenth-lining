@@ -33,18 +33,45 @@ class MpesaService
      */
     public function getAccessToken(): ?string
     {
+        $url = "{$this->baseUrl}/oauth/v1/generate?grant_type=client_credentials";
+        Log::info('[M-Pesa] OAuth token request initiated', [
+            'url' => $url,
+            'environment' => config('services.mpesa.environment'),
+            'consumer_key_prefix' => substr($this->consumerKey, 0, 6) . '...',
+        ]);
+
+        $startTime = microtime(true);
+
         try {
-            $response = Http::withBasicAuth($this->consumerKey, $this->consumerSecret)
-                ->get("{$this->baseUrl}/oauth/v1/generate?grant_type=client_credentials");
+            $response = Http::timeout(30)
+                ->retry(2, 500)
+                ->withBasicAuth($this->consumerKey, $this->consumerSecret)
+                ->get($url);
+
+            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
 
             if ($response->successful()) {
+                Log::info('[M-Pesa] OAuth token generated successfully', [
+                    'duration_ms' => $durationMs,
+                    'status' => $response->status(),
+                ]);
                 return $response->json('access_token');
             }
 
-            Log::error('M-Pesa OAuth failed', ['response' => $response->body(), 'status' => $response->status()]);
+            Log::error('[M-Pesa] OAuth token request failed', [
+                'duration_ms' => $durationMs,
+                'status' => $response->status(),
+                'headers' => $response->headers(),
+                'body' => $response->body(),
+            ]);
             return null;
         } catch (\Throwable $e) {
-            Log::error('M-Pesa OAuth exception', ['error' => $e->getMessage()]);
+            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+            Log::error('[M-Pesa] OAuth token exception', [
+                'duration_ms' => $durationMs,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return null;
         }
     }
@@ -54,44 +81,84 @@ class MpesaService
      */
     public function stkPush(string $phone, float $amount, string $accountReference, string $description = 'Tenth Lining'): ?array
     {
+        $url = "{$this->baseUrl}/mpesa/stkpush/v1/processrequest";
         $token = $this->getAccessToken();
+
         if (!$token) {
-            return ['error' => 'Authentication with M-Pesa failed. Please check API credentials.'];
+            Log::error('[M-Pesa] STK Push aborted: OAuth token unavailable');
+            return ['error' => 'Could not connect to Safaricom M-Pesa API (OAuth authentication failed or timed out). Check laravel.log for full details.'];
         }
 
         $timestamp = now()->format('YmdHis');
         $password = base64_encode($this->shortcode . $this->passkey . $timestamp);
-
-        // Normalize phone number to 254...
         $phone = $this->formatPhoneNumber($phone);
+        $callbackUrl = $this->callbackUrl ?: url('/api/mpesa/callback');
+
+        $payload = [
+            'BusinessShortCode' => $this->shortcode,
+            'Password' => $password,
+            'Timestamp' => $timestamp,
+            'TransactionType' => $this->transactionType,
+            'Amount' => (int) ceil($amount),
+            'PartyA' => $phone,
+            'PartyB' => $this->shortcode,
+            'PhoneNumber' => $phone,
+            'CallBackURL' => $callbackUrl,
+            'AccountReference' => substr($accountReference, 0, 12),
+            'TransactionDesc' => substr($description, 0, 12),
+        ];
+
+        Log::info('[M-Pesa] STK Push request payload prepared', [
+            'url' => $url,
+            'shortcode' => $this->shortcode,
+            'transaction_type' => $this->transactionType,
+            'phone' => $phone,
+            'amount' => (int) ceil($amount),
+            'callback_url' => $callbackUrl,
+            'account_ref' => $payload['AccountReference'],
+        ]);
+
+        $startTime = microtime(true);
 
         try {
-            $response = Http::withToken($token)
-                ->post("{$this->baseUrl}/mpesa/stkpush/v1/processrequest", [
-                    'BusinessShortCode' => $this->shortcode,
-                    'Password' => $password,
-                    'Timestamp' => $timestamp,
-                    'TransactionType' => $this->transactionType,
-                    'Amount' => (int) ceil($amount),
-                    'PartyA' => $phone,
-                    'PartyB' => $this->shortcode,
-                    'PhoneNumber' => $phone,
-                    'CallBackURL' => $this->callbackUrl ?: url('/api/mpesa/callback'),
-                    'AccountReference' => substr($accountReference, 0, 12),
-                    'TransactionDesc' => substr($description, 0, 12),
-                ]);
+            $response = Http::timeout(30)
+                ->retry(2, 500)
+                ->withToken($token)
+                ->post($url, $payload);
 
+            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
             $data = $response->json() ?? [];
 
             if ($response->successful() && isset($data['CheckoutRequestID'])) {
+                Log::info('[M-Pesa] STK Push initiated successfully', [
+                    'duration_ms' => $durationMs,
+                    'checkout_request_id' => $data['CheckoutRequestID'],
+                    'merchant_request_id' => $data['MerchantRequestID'] ?? null,
+                    'response' => $data,
+                ]);
                 return $data;
             }
 
-            Log::error('M-Pesa STK Push failed', ['response' => $data, 'body' => $response->body()]);
-            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed.';
+            Log::error('[M-Pesa] STK Push request failed from Safaricom', [
+                'duration_ms' => $durationMs,
+                'status' => $response->status(),
+                'data' => $data,
+                'raw_body' => $response->body(),
+            ]);
+
+            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed (' . $response->status() . ').';
             return ['error' => $errorMsg];
         } catch (\Throwable $e) {
-            Log::error('M-Pesa STK Push exception', ['error' => $e->getMessage()]);
+            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+            Log::error('[M-Pesa] STK Push exception', [
+                'duration_ms' => $durationMs,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            if (str_contains($e->getMessage(), 'cURL error 28')) {
+                return ['error' => 'Connection to Safaricom API timed out (cURL error 28 after 30s). If testing on localhost, outbound connection to api.safaricom.co.ke may be blocked by local ISP/firewall. Deploy to live server.'];
+            }
             return ['error' => $e->getMessage()];
         }
     }
@@ -110,7 +177,8 @@ class MpesaService
         $password = base64_encode($this->shortcode . $this->passkey . $timestamp);
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::timeout(30)
+                ->withToken($token)
                 ->post("{$this->baseUrl}/mpesa/stkpushquery/v1/query", [
                     'BusinessShortCode' => $this->shortcode,
                     'Password' => $password,
@@ -118,9 +186,15 @@ class MpesaService
                     'CheckoutRequestID' => $checkoutRequestId,
                 ]);
 
+            Log::info('[M-Pesa] STK Query response', [
+                'checkout_request_id' => $checkoutRequestId,
+                'status' => $response->status(),
+                'data' => $response->json(),
+            ]);
+
             return $response->json();
         } catch (\Throwable $e) {
-            Log::error('M-Pesa STK Query exception', ['error' => $e->getMessage()]);
+            Log::error('[M-Pesa] STK Query exception', ['error' => $e->getMessage()]);
             return null;
         }
     }

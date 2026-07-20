@@ -66,9 +66,11 @@ class PaymentController extends Controller
     public function callback(Request $request)
     {
         $data = $request->all();
+        \Illuminate\Support\Facades\Log::info('[M-Pesa Callback Received]', ['payload' => $data]);
 
         $body = $data['Body']['stkCallback'] ?? null;
         if (!$body) {
+            \Illuminate\Support\Facades\Log::warning('[M-Pesa Callback] Invalid payload structure missing stkCallback', ['data' => $data]);
             return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Invalid callback data']);
         }
 
@@ -78,6 +80,7 @@ class PaymentController extends Controller
 
         $payment = Payment::where('checkout_request_id', $checkoutRequestId)->first();
         if (!$payment) {
+            \Illuminate\Support\Facades\Log::warning('[M-Pesa Callback] Payment record not found for CheckoutRequestID', ['checkout_request_id' => $checkoutRequestId]);
             return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
         }
 
@@ -102,10 +105,22 @@ class PaymentController extends Controller
                 'receipt_number' => 'TL-' . strtoupper(Str::random(8)),
                 'download_token' => Str::uuid()->toString(),
             ]);
+
+            \Illuminate\Support\Facades\Log::info('[M-Pesa Payment Completed]', [
+                'payment_id' => $payment->id,
+                'mpesa_receipt' => $mpesaReceiptNumber,
+                'document_id' => $payment->document_id,
+            ]);
         } else {
             // Failed payment
             $payment->update([
                 'status' => 'failed',
+                'result_desc' => $resultDesc,
+            ]);
+
+            \Illuminate\Support\Facades\Log::warning('[M-Pesa Payment Failed User Callback]', [
+                'payment_id' => $payment->id,
+                'result_code' => $resultCode,
                 'result_desc' => $resultDesc,
             ]);
         }
