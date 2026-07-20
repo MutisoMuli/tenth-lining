@@ -23,7 +23,8 @@ class MpesaService
         $this->shortcode = config('services.mpesa.shortcode', '4879341');
         $this->transactionType = config('services.mpesa.transaction_type', 'CustomerPayBillOnline');
         $this->callbackUrl = config('services.mpesa.callback_url', '');
-        $this->baseUrl = config('services.mpesa.environment') === 'production'
+        $env = strtolower(config('services.mpesa.environment', 'production'));
+        $this->baseUrl = in_array($env, ['production', 'live'])
             ? 'https://api.safaricom.co.ke'
             : 'https://sandbox.safaricom.co.ke';
     }
@@ -44,7 +45,7 @@ class MpesaService
 
         try {
             $response = Http::timeout(30)
-                ->retry(2, 500)
+                ->retry(2, 500, throw: false)
                 ->withBasicAuth($this->consumerKey, $this->consumerSecret)
                 ->get($url);
 
@@ -70,7 +71,6 @@ class MpesaService
             Log::error('[M-Pesa] OAuth token exception', [
                 'duration_ms' => $durationMs,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
             return null;
         }
@@ -92,7 +92,18 @@ class MpesaService
         $timestamp = now()->format('YmdHis');
         $password = base64_encode($this->shortcode . $this->passkey . $timestamp);
         $phone = $this->formatPhoneNumber($phone);
-        $callbackUrl = $this->callbackUrl ?: url('/api/mpesa/callback');
+
+        // Safaricom production API requires a valid public HTTPS CallBackURL (no localhost/127.0.0.1)
+        $callbackUrl = $this->callbackUrl;
+        if (empty($callbackUrl) || str_contains($callbackUrl, 'localhost') || str_contains($callbackUrl, '127.0.0.1')) {
+            $host = request()->getHttpHost();
+            if ($host && !str_contains($host, 'localhost') && !str_contains($host, '127.0.0.1')) {
+                $scheme = request()->isSecure() ? 'https' : 'https';
+                $callbackUrl = "{$scheme}://{$host}/api/mpesa/callback";
+            } else {
+                $callbackUrl = url('/api/mpesa/callback');
+            }
+        }
 
         $payload = [
             'BusinessShortCode' => $this->shortcode,
@@ -122,7 +133,7 @@ class MpesaService
 
         try {
             $response = Http::timeout(30)
-                ->retry(2, 500)
+                ->retry(2, 500, throw: false)
                 ->withToken($token)
                 ->post($url, $payload);
 
@@ -142,18 +153,19 @@ class MpesaService
             Log::error('[M-Pesa] STK Push request failed from Safaricom', [
                 'duration_ms' => $durationMs,
                 'status' => $response->status(),
+                'error_code' => $data['errorCode'] ?? null,
+                'error_message' => $data['errorMessage'] ?? $data['ResponseDescription'] ?? null,
                 'data' => $data,
                 'raw_body' => $response->body(),
             ]);
 
-            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed (' . $response->status() . ').';
+            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed (' . ($data['errorCode'] ?? $response->status()) . ').';
             return ['error' => $errorMsg];
         } catch (\Throwable $e) {
             $durationMs = round((microtime(true) - $startTime) * 1000, 2);
             Log::error('[M-Pesa] STK Push exception', [
                 'duration_ms' => $durationMs,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             if (str_contains($e->getMessage(), 'cURL error 28')) {
