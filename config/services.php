@@ -39,9 +39,10 @@ return [
         'consumer_key' => env('MPESA_CONSUMER_KEY', ''),
         'consumer_secret' => env('MPESA_CONSUMER_SECRET', ''),
         'passkey' => env('MPESA_PASSKEY', ''),
-        'shortcode' => env('MPESA_SHORTCODE', '174379'),
+        'shortcode' => env('MPESA_SHORTCODE', '4879341'),
+        'transaction_type' => env('MPESA_TRANSACTION_TYPE', 'CustomerPayBillOnline'),
         'callback_url' => env('MPESA_CALLBACK_URL', ''),
-        'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+        'environment' => env('MPESA_ENVIRONMENT', 'production'),
     ],
 
     'libreoffice' => [

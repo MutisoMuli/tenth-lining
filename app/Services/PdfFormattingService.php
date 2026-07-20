@@ -129,6 +129,10 @@ class PdfFormattingService
         $topOffset = (float) ($settings['top_offset'] ?? 0);
 
         $color = $this->hexToRgb($settings['colour'] ?? '#000000');
+        $lineColorHex = $settings['line_colour'] ?? $settings['colour'] ?? '#000000';
+        $lineColor = $this->hexToRgb($lineColorHex);
+        $lineThickness = (float) ($settings['line_thickness'] ?? 0.3);
+        $customLineLength = (float) ($settings['line_length'] ?? 0);
 
         // Number every 10th line
         $lineNumber = 0;
@@ -139,11 +143,15 @@ class PdfFormattingService
                 $y = ($yPercent / 100) * $size['height'] + $topOffset;
 
                 // ── Draw horizontal line ──
-                $lineStartX = $size['width'] * 0.55; // Start at ~55% of page width
                 $lineEndX = $size['width'] - $rightMargin;
+                if ($customLineLength > 0) {
+                    $lineStartX = max(0, $lineEndX - $customLineLength);
+                } else {
+                    $lineStartX = $size['width'] * 0.55; // Default ~55% of page width
+                }
 
-                $pdf->SetDrawColor($color[0], $color[1], $color[2]);
-                $pdf->SetLineWidth(0.3);
+                $pdf->SetDrawColor($lineColor[0], $lineColor[1], $lineColor[2]);
+                $pdf->SetLineWidth($lineThickness);
                 $pdf->Line($lineStartX, $y, $lineEndX, $y);
 
                 // ── Draw badge rectangle ──
@@ -205,7 +213,10 @@ class PdfFormattingService
      */
     protected function sanitizeFont(string $font): string
     {
-        $allowed = ['Helvetica', 'Times', 'Courier', 'Symbol', 'ZapfDingbats'];
-        return in_array($font, $allowed) ? $font : 'Helvetica';
+        return match ($font) {
+            'Times', 'Merriweather', 'Playfair', 'Georgia' => 'Times',
+            'Courier', 'FiraCode' => 'Courier',
+            default => 'Helvetica',
+        };
     }
 }

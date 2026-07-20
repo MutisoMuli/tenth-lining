@@ -12,6 +12,7 @@ class MpesaService
     protected string $passkey;
     protected string $shortcode;
     protected string $callbackUrl;
+    protected string $transactionType;
     protected string $baseUrl;
 
     public function __construct()
@@ -19,7 +20,8 @@ class MpesaService
         $this->consumerKey = config('services.mpesa.consumer_key', '');
         $this->consumerSecret = config('services.mpesa.consumer_secret', '');
         $this->passkey = config('services.mpesa.passkey', '');
-        $this->shortcode = config('services.mpesa.shortcode', '174379');
+        $this->shortcode = config('services.mpesa.shortcode', '4879341');
+        $this->transactionType = config('services.mpesa.transaction_type', 'CustomerPayBillOnline');
         $this->callbackUrl = config('services.mpesa.callback_url', '');
         $this->baseUrl = config('services.mpesa.environment') === 'production'
             ? 'https://api.safaricom.co.ke'
@@ -39,7 +41,7 @@ class MpesaService
                 return $response->json('access_token');
             }
 
-            Log::error('M-Pesa OAuth failed', ['response' => $response->body()]);
+            Log::error('M-Pesa OAuth failed', ['response' => $response->body(), 'status' => $response->status()]);
             return null;
         } catch (\Throwable $e) {
             Log::error('M-Pesa OAuth exception', ['error' => $e->getMessage()]);
@@ -54,7 +56,7 @@ class MpesaService
     {
         $token = $this->getAccessToken();
         if (!$token) {
-            return null;
+            return ['error' => 'Authentication with M-Pesa failed. Please check API credentials.'];
         }
 
         $timestamp = now()->format('YmdHis');
@@ -69,27 +71,28 @@ class MpesaService
                     'BusinessShortCode' => $this->shortcode,
                     'Password' => $password,
                     'Timestamp' => $timestamp,
-                    'TransactionType' => 'CustomerPayBillOnline',
+                    'TransactionType' => $this->transactionType,
                     'Amount' => (int) ceil($amount),
                     'PartyA' => $phone,
                     'PartyB' => $this->shortcode,
                     'PhoneNumber' => $phone,
-                    'CallBackURL' => $this->callbackUrl,
-                    'AccountReference' => $accountReference,
-                    'TransactionDesc' => $description,
+                    'CallBackURL' => $this->callbackUrl ?: url('/api/mpesa/callback'),
+                    'AccountReference' => substr($accountReference, 0, 12),
+                    'TransactionDesc' => substr($description, 0, 12),
                 ]);
 
-            $data = $response->json();
+            $data = $response->json() ?? [];
 
             if ($response->successful() && isset($data['CheckoutRequestID'])) {
                 return $data;
             }
 
-            Log::error('M-Pesa STK Push failed', ['response' => $data]);
-            return null;
+            Log::error('M-Pesa STK Push failed', ['response' => $data, 'body' => $response->body()]);
+            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed.';
+            return ['error' => $errorMsg];
         } catch (\Throwable $e) {
             Log::error('M-Pesa STK Push exception', ['error' => $e->getMessage()]);
-            return null;
+            return ['error' => $e->getMessage()];
         }
     }
 

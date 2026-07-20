@@ -69,7 +69,19 @@ class DocumentController extends Controller
             'payment_status' => 'unpaid',
         ]);
 
-        return redirect()->route('editor', $document->id);
+        // Return JSON for SPA requests, redirect for traditional form submits
+        if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'success' => true,
+                'document_id' => $document->id,
+                'original_name' => $document->original_name,
+                'page_count' => $document->page_count,
+                'file_size' => $document->file_size,
+            ]);
+        }
+
+        return redirect()->route('spa', ['any' => 'editor/' . $document->id]);
+
     }
 
     /**

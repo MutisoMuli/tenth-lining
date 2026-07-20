@@ -33,10 +33,11 @@ class PaymentController extends Controller
         );
 
         if (!$response || !isset($response['CheckoutRequestID'])) {
+            $error = $response['error'] ?? 'Failed to initiate M-Pesa payment. Please verify phone number and credentials.';
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to initiate payment. Please try again.',
-            ], 500);
+                'message' => $error,
+            ], 400);
         }
 
         // Create payment record
