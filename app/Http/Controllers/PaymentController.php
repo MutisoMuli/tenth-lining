@@ -32,8 +32,8 @@ class PaymentController extends Controller
             'Tenth Lining - ' . $document->page_count . ' pages'
         );
 
-        if (!$response || !isset($response['CheckoutRequestID'])) {
-            $error = $response['error'] ?? 'Failed to initiate M-Pesa payment. Please verify phone number and credentials.';
+        if (!$response || isset($response['error']) || !isset($response['CheckoutRequestID'])) {
+            $error = $response['error'] ?? $response['errorMessage'] ?? 'Failed to initiate M-Pesa payment.';
             return response()->json([
                 'success' => false,
                 'message' => $error,

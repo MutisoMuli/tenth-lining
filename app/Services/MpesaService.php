@@ -11,8 +11,10 @@ class MpesaService
     protected string $consumerSecret;
     protected string $passkey;
     protected string $shortcode;
+    protected string $storeNumber;
     protected string $callbackUrl;
     protected string $transactionType;
+    protected string $environment;
     protected string $baseUrl;
 
     public function __construct()
@@ -21,12 +23,20 @@ class MpesaService
         $this->consumerSecret = config('services.mpesa.consumer_secret', '');
         $this->passkey = config('services.mpesa.passkey', '');
         $this->shortcode = config('services.mpesa.shortcode', '4879341');
-        $this->transactionType = config('services.mpesa.transaction_type', 'CustomerPayBillOnline');
+        $this->storeNumber = config('services.mpesa.store_number', '');
+        $this->transactionType = config('services.mpesa.transaction_type', 'CustomerBuyGoodsOnline');
         $this->callbackUrl = config('services.mpesa.callback_url', '');
-        $env = strtolower(config('services.mpesa.environment', 'production'));
-        $this->baseUrl = in_array($env, ['production', 'live'])
+        $this->environment = strtolower(config('services.mpesa.environment', 'live'));
+        $this->baseUrl = in_array($this->environment, ['production', 'live'])
             ? 'https://api.safaricom.co.ke'
             : 'https://sandbox.safaricom.co.ke';
+
+        Log::info('[M-Pesa] Service initialized', [
+            'environment' => $this->environment,
+            'shortcode' => $this->shortcode,
+            'store_number' => $this->storeNumber,
+            'transaction_type' => $this->transactionType,
+        ]);
     }
 
     /**
@@ -35,43 +45,25 @@ class MpesaService
     public function getAccessToken(): ?string
     {
         $url = "{$this->baseUrl}/oauth/v1/generate?grant_type=client_credentials";
-        Log::info('[M-Pesa] OAuth token request initiated', [
-            'url' => $url,
-            'environment' => config('services.mpesa.environment'),
-            'consumer_key_prefix' => substr($this->consumerKey, 0, 6) . '...',
-        ]);
-
-        $startTime = microtime(true);
 
         try {
             $response = Http::timeout(30)
-                ->retry(2, 500, throw: false)
+                ->withOptions(['verify' => false])
                 ->withBasicAuth($this->consumerKey, $this->consumerSecret)
                 ->get($url);
 
-            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
-
             if ($response->successful()) {
-                Log::info('[M-Pesa] OAuth token generated successfully', [
-                    'duration_ms' => $durationMs,
-                    'status' => $response->status(),
-                ]);
+                Log::info('[M-Pesa] Access token generated', ['status' => $response->status()]);
                 return $response->json('access_token');
             }
 
-            Log::error('[M-Pesa] OAuth token request failed', [
-                'duration_ms' => $durationMs,
+            Log::error('[M-Pesa] Access token error', [
                 'status' => $response->status(),
-                'headers' => $response->headers(),
                 'body' => $response->body(),
             ]);
             return null;
         } catch (\Throwable $e) {
-            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
-            Log::error('[M-Pesa] OAuth token exception', [
-                'duration_ms' => $durationMs,
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('[M-Pesa] Access token exception', ['error' => $e->getMessage()]);
             return null;
         }
     }
@@ -81,96 +73,96 @@ class MpesaService
      */
     public function stkPush(string $phone, float $amount, string $accountReference, string $description = 'Tenth Lining'): ?array
     {
-        $url = "{$this->baseUrl}/mpesa/stkpush/v1/processrequest";
-        $token = $this->getAccessToken();
+        $accessToken = $this->getAccessToken();
 
-        if (!$token) {
-            Log::error('[M-Pesa] STK Push aborted: OAuth token unavailable');
-            return ['error' => 'Could not connect to Safaricom M-Pesa API (OAuth authentication failed or timed out). Check laravel.log for full details.'];
+        if (!$accessToken) {
+            return ['error' => 'Failed to authenticate with M-Pesa. Please try again.'];
         }
 
-        $timestamp = now()->format('YmdHis');
-        $password = base64_encode($this->shortcode . $this->passkey . $timestamp);
         $phone = $this->formatPhoneNumber($phone);
+        $timestamp = now()->format('YmdHis');
 
-        // Safaricom production API requires a valid public HTTPS CallBackURL (no localhost/127.0.0.1)
+        // Password MUST be generated using the BusinessShortCode (HO number)
+        $businessShortCode = $this->shortcode;
+        $password = base64_encode($businessShortCode . $this->passkey . $timestamp);
+
+        // Determine PartyB based on transaction type
+        // For Till (Buy Goods): PartyB = Store/Till Number
+        // For Paybill: PartyB = BusinessShortCode (same as HO)
+        $partyB = $businessShortCode;
+        if ($this->transactionType === 'CustomerBuyGoodsOnline' && !empty($this->storeNumber)) {
+            $partyB = $this->storeNumber;
+            Log::info('[M-Pesa] Using distinct PartyB for Till STK Push', [
+                'ho_shortcode' => $businessShortCode,
+                'till_party_b' => $partyB,
+            ]);
+        }
+
+        // Resolve callback URL - Safaricom rejects localhost/127.0.0.1
         $callbackUrl = $this->callbackUrl;
         if (empty($callbackUrl) || str_contains($callbackUrl, 'localhost') || str_contains($callbackUrl, '127.0.0.1')) {
             $host = request()->getHttpHost();
             if ($host && !str_contains($host, 'localhost') && !str_contains($host, '127.0.0.1')) {
-                $scheme = request()->isSecure() ? 'https' : 'https';
-                $callbackUrl = "{$scheme}://{$host}/api/mpesa/callback";
+                $callbackUrl = "https://{$host}/api/mpesa/callback";
             } else {
                 $callbackUrl = url('/api/mpesa/callback');
             }
         }
 
+        // In sandbox, always use CustomerPayBillOnline regardless of config
+        $transactionType = $this->environment === 'sandbox'
+            ? 'CustomerPayBillOnline'
+            : $this->transactionType;
+
+        $url = "{$this->baseUrl}/mpesa/stkpush/v1/processrequest";
+
         $payload = [
-            'BusinessShortCode' => $this->shortcode,
+            'BusinessShortCode' => $businessShortCode,
             'Password' => $password,
             'Timestamp' => $timestamp,
-            'TransactionType' => $this->transactionType,
+            'TransactionType' => $transactionType,
             'Amount' => (int) ceil($amount),
             'PartyA' => $phone,
-            'PartyB' => $this->shortcode,
+            'PartyB' => $partyB,
             'PhoneNumber' => $phone,
             'CallBackURL' => $callbackUrl,
             'AccountReference' => substr($accountReference, 0, 12),
             'TransactionDesc' => substr($description, 0, 12),
         ];
 
-        Log::info('[M-Pesa] STK Push request payload prepared', [
+        Log::info('[M-Pesa] STK Push request', [
             'url' => $url,
-            'shortcode' => $this->shortcode,
-            'transaction_type' => $this->transactionType,
+            'shortcode' => $businessShortCode,
+            'store_number' => $this->storeNumber,
+            'party_b' => $partyB,
+            'transaction_type' => $transactionType,
             'phone' => $phone,
             'amount' => (int) ceil($amount),
             'callback_url' => $callbackUrl,
             'account_ref' => $payload['AccountReference'],
         ]);
 
-        $startTime = microtime(true);
-
         try {
             $response = Http::timeout(30)
-                ->retry(2, 500, throw: false)
-                ->withToken($token)
+                ->withOptions(['verify' => false])
+                ->withToken($accessToken)
                 ->post($url, $payload);
 
-            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
-            $data = $response->json() ?? [];
+            $result = $response->json() ?? [];
 
-            if ($response->successful() && isset($data['CheckoutRequestID'])) {
-                Log::info('[M-Pesa] STK Push initiated successfully', [
-                    'duration_ms' => $durationMs,
-                    'checkout_request_id' => $data['CheckoutRequestID'],
-                    'merchant_request_id' => $data['MerchantRequestID'] ?? null,
-                    'response' => $data,
-                ]);
-                return $data;
-            }
-
-            Log::error('[M-Pesa] STK Push request failed from Safaricom', [
-                'duration_ms' => $durationMs,
+            Log::info('[M-Pesa] STK Push response', [
                 'status' => $response->status(),
-                'error_code' => $data['errorCode'] ?? null,
-                'error_message' => $data['errorMessage'] ?? $data['ResponseDescription'] ?? null,
-                'data' => $data,
-                'raw_body' => $response->body(),
+                'response' => $result,
             ]);
 
-            $errorMsg = $data['errorMessage'] ?? $data['ResponseDescription'] ?? 'M-Pesa STK Push failed (' . ($data['errorCode'] ?? $response->status()) . ').';
+            if (isset($result['ResponseCode']) && $result['ResponseCode'] == '0') {
+                return $result;
+            }
+
+            $errorMsg = $result['errorMessage'] ?? $result['ResponseDescription'] ?? 'M-Pesa STK Push failed (' . ($result['errorCode'] ?? $response->status()) . ').';
             return ['error' => $errorMsg];
         } catch (\Throwable $e) {
-            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
-            Log::error('[M-Pesa] STK Push exception', [
-                'duration_ms' => $durationMs,
-                'error' => $e->getMessage(),
-            ]);
-
-            if (str_contains($e->getMessage(), 'cURL error 28')) {
-                return ['error' => 'Connection to Safaricom API timed out (cURL error 28 after 30s). If testing on localhost, outbound connection to api.safaricom.co.ke may be blocked by local ISP/firewall. Deploy to live server.'];
-            }
+            Log::error('[M-Pesa] STK Push exception', ['error' => $e->getMessage()]);
             return ['error' => $e->getMessage()];
         }
     }
@@ -188,23 +180,27 @@ class MpesaService
         $timestamp = now()->format('YmdHis');
         $password = base64_encode($this->shortcode . $this->passkey . $timestamp);
 
+        $url = "{$this->baseUrl}/mpesa/stkpushquery/v1/query";
+
         try {
             $response = Http::timeout(30)
+                ->withOptions(['verify' => false])
                 ->withToken($token)
-                ->post("{$this->baseUrl}/mpesa/stkpushquery/v1/query", [
+                ->post($url, [
                     'BusinessShortCode' => $this->shortcode,
                     'Password' => $password,
                     'Timestamp' => $timestamp,
                     'CheckoutRequestID' => $checkoutRequestId,
                 ]);
 
-            Log::info('[M-Pesa] STK Query response', [
+            $result = $response->json();
+
+            Log::info('[M-Pesa] STK Query result', [
                 'checkout_request_id' => $checkoutRequestId,
-                'status' => $response->status(),
-                'data' => $response->json(),
+                'response' => $result,
             ]);
 
-            return $response->json();
+            return $result;
         } catch (\Throwable $e) {
             Log::error('[M-Pesa] STK Query exception', ['error' => $e->getMessage()]);
             return null;
@@ -216,12 +212,14 @@ class MpesaService
      */
     protected function formatPhoneNumber(string $phone): string
     {
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+        // Strip spaces, dashes, parentheses
+        $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
 
-        if (str_starts_with($phone, '0')) {
-            $phone = '254' . substr($phone, 1);
-        } elseif (str_starts_with($phone, '+254')) {
+        if (str_starts_with($phone, '+254')) {
             $phone = substr($phone, 1);
+        } elseif (str_starts_with($phone, '0')) {
+            $phone = '254' . substr($phone, 1);
         }
 
         return $phone;
