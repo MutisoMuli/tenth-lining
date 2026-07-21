@@ -1906,7 +1906,31 @@ class App {
                 const resp = await fetch(`${config.baseUrl}/document/${id}/export`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ line_coordinates: allLineCoordinates }),
+                    body: JSON.stringify({
+                        line_coordinates: allLineCoordinates,
+                        page_number_settings: {
+                            enabled: pnEnabledInput.checked,
+                            font: pnFontSelect.value,
+                            font_size: parseInt(pnSizeInput.value),
+                            colour: pnColorInput.value,
+                            bold: pnBoldBtn.classList.contains('bg-purple-600'),
+                            italic: pnItalicBtn.classList.contains('bg-purple-600'),
+                            starting_number: parseInt(pnStartInput.value) || 1,
+                            margin_top: parseInt(pnMarginTopInput.value) || 15,
+                            margin_right: parseInt(pnMarginRightInput.value) || 15,
+                        },
+                        tenth_line_settings: {
+                            enabled: tlEnabledInput.checked,
+                            font: tlFontSelect.value,
+                            font_size: parseInt(tlSizeInput.value),
+                            colour: tlColorInput.value,
+                            bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                            right_margin: parseInt(tlMarginInput.value) || 30,
+                            line_length: parseInt(tlLineLengthInput.value) || 50,
+                            line_thickness: parseFloat(tlLineThicknessInput.value) || 1,
+                            line_colour: tlLineColorInput.value,
+                        },
+                    }),
                 });
                 const result = await resp.json();
 

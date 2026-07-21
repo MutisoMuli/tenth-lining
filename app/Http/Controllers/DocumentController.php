@@ -137,6 +137,16 @@ class DocumentController extends Controller
             return response()->json(['error' => 'Payment required before download.'], 402);
         }
 
+        // Use settings from the request (current editor state) with DB fallback
+        $pageNumberSettings = $request->input('page_number_settings', $document->page_number_settings ?? []);
+        $tenthLineSettings = $request->input('tenth_line_settings', $document->tenth_line_settings ?? []);
+
+        // Persist settings so re-downloads from history also use them
+        $document->update([
+            'page_number_settings' => $pageNumberSettings,
+            'tenth_line_settings' => $tenthLineSettings,
+        ]);
+
         // Generate formatted PDF
         $formatter = new PdfFormattingService();
         $inputPath = storage_path('app/private/' . $document->original_path);
@@ -153,8 +163,8 @@ class DocumentController extends Controller
         $success = $formatter->format(
             $inputPath,
             $outputPath,
-            $document->page_number_settings ?? [],
-            $document->tenth_line_settings ?? [],
+            $pageNumberSettings,
+            $tenthLineSettings,
             $lineCoordinates
         );
 
