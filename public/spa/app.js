@@ -188,6 +188,14 @@ class App {
             return;
         }
 
+        if (hash === '#/tool/unlock-pdf' || hash === '#/tool/protect-pdf' ||
+            hash === '#/tool/sign-pdf' || hash === '#/tool/redact-pdf' ||
+            hash === '#/tool/compare-pdf') {
+            const toolType = hash.replace('#/tool/', '').split('?')[0];
+            this.renderSecurityTool(toolType);
+            return;
+        }
+
         if (hash === '#/tool/remove-pages' || hash === '#/tool/extract-pages' ||
             hash === '#/tool/organize-pdf' || hash === '#/tool/scan-to-pdf') {
             const toolType = hash.replace('#/tool/', '').split('?')[0];
@@ -5638,6 +5646,379 @@ class App {
 
         document.getElementById('btn-edit-another').addEventListener('click', () => {
             state = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, selectedRotation: 90, paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
+
+    renderSecurityTool(toolType = 'unlock-pdf') {
+        const toolsMap = {
+            'unlock-pdf': {
+                title: 'Unlock PDF',
+                desc: 'Remove passwords, encryption, and restrictions from your PDF file.',
+                accept: '.pdf',
+                label: 'Select PDF file to unlock',
+                icon: '🔓'
+            },
+            'protect-pdf': {
+                title: 'Protect PDF',
+                desc: 'Encrypt your PDF with a strong password to prevent unauthorized access.',
+                accept: '.pdf',
+                label: 'Select PDF file to protect',
+                icon: '🛡️'
+            },
+            'sign-pdf': {
+                title: 'Sign PDF',
+                desc: 'Sign your PDF with a digital signature name or drawn signature.',
+                accept: '.pdf',
+                label: 'Select PDF file to sign',
+                icon: '✍️'
+            },
+            'redact-pdf': {
+                title: 'Redact PDF',
+                desc: 'Blackout confidential text and sensitive content from your PDF pages.',
+                accept: '.pdf',
+                label: 'Select PDF file to redact',
+                icon: '🚫'
+            },
+            'compare-pdf': {
+                title: 'Compare PDF',
+                desc: 'Compare two PDF documents side-by-side to review changes.',
+                accept: '.pdf',
+                label: 'Select primary PDF file to compare',
+                icon: '⚖️'
+            }
+        };
+
+        const activeTool = toolsMap[toolType] || toolsMap['unlock-pdf'];
+
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml(toolType)}
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <a href="#/tool/all-pdf-tools" class="inline-flex items-center gap-1.5 text-xs text-purple-600 font-bold hover:underline mb-4">
+                            ← Back to all PDF tools
+                        </a>
+                        <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm text-2xl">
+                            ${activeTool.icon}
+                        </div>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+                            ${activeTool.title}
+                        </h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">
+                            ${activeTool.desc}
+                        </p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="sec-upload-zone" class="bg-white border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-3xl p-10 md:p-14 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group max-w-2xl mx-auto" id="sec-drop-area">
+                        <input type="file" id="sec-file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="${activeTool.accept}">
+                        
+                        <div class="space-y-4 pointer-events-none">
+                            <div class="w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+                            </div>
+                            <div>
+                                <span class="inline-block px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-500/25 transition-all">
+                                    ${activeTool.label}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400">or drop PDF file here</p>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="sec-upload-loading" class="hidden py-12 text-center">
+                        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-slate-600 font-bold text-sm">Uploading and analyzing document...</p>
+                    </div>
+
+                    <!-- STEP 2: Configure Security Options -->
+                    <div id="sec-config-zone" class="hidden animate-fade-in text-left">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                            
+                            <!-- Left: Interactive PDF Preview Canvas -->
+                            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        Interactive Document Preview
+                                    </h4>
+                                    <span id="sec-preview-page-indicator" class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Page 1</span>
+                                </div>
+
+                                <div class="relative bg-slate-100 rounded-xl overflow-hidden min-h-[420px] flex items-center justify-center border border-slate-200">
+                                    <canvas id="sec-pdf-canvas" class="max-w-full h-auto shadow-md rounded"></canvas>
+                                    <div id="sec-canvas-loader" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                                        <div class="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Security Tool Controls & Summary -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-6 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">${activeTool.title} Settings</h4>
+
+                                <!-- Unlock PDF Controls -->
+                                ${toolType === 'unlock-pdf' ? `
+                                    <div class="space-y-3">
+                                        <label class="block text-xs font-bold text-slate-700">Document Password (if required)</label>
+                                        <input type="password" id="sec-unlock-pass" placeholder="Enter password to unlock" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none">
+                                        <p class="text-[11px] text-slate-400">If the PDF is password-protected, enter the password above to remove restrictions.</p>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Protect PDF Controls -->
+                                ${toolType === 'protect-pdf' ? `
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Set PDF Password</label>
+                                            <input type="password" id="sec-protect-pass" placeholder="Enter new password" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none" value="123456">
+                                        </div>
+                                        <p class="text-[11px] text-slate-400">Recipient will be required to enter this password to open the document.</p>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Sign PDF Controls -->
+                                ${toolType === 'sign-pdf' ? `
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Signer Name / Text</label>
+                                            <input type="text" id="sec-sign-name" placeholder="John Doe" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none" value="Authorized Signature">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Signature Position</label>
+                                            <select id="sec-sign-page" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none">
+                                                <option value="last">Bottom of Last Page</option>
+                                                <option value="1">Bottom of First Page</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Redact PDF Controls -->
+                                ${toolType === 'redact-pdf' ? `
+                                    <div class="space-y-3">
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Redaction Region</label>
+                                        <select id="sec-redact-preset" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:outline-none">
+                                            <option value="header">Top Page Header Area</option>
+                                            <option value="footer">Bottom Page Footer Area</option>
+                                            <option value="middle">Middle Content Region</option>
+                                        </select>
+                                        <p class="text-[11px] text-slate-400">Selected confidential area will be permanently blacked out.</p>
+                                    </div>
+                                ` : ''}
+
+                                <!-- Compare PDF Controls -->
+                                ${toolType === 'compare-pdf' ? `
+                                    <div class="space-y-3">
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Upload Second PDF to Compare</label>
+                                        <input type="file" id="sec-compare-file" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer">
+                                        <p class="text-[11px] text-slate-400">Select another PDF file to compare side-by-side.</p>
+                                    </div>
+                                ` : ''}
+
+                                <div class="border-t border-slate-150 pt-3 space-y-2 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="sec-summary-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
+                                    </div>
+                                </div>
+
+                                <button id="btn-sec-process" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Process & Download PDF
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="sec-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mb-2">Processing Complete!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your PDF security task has been processed successfully.</p>
+                        
+                        <div class="space-y-3">
+                            <a id="btn-download-sec" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download Processed PDF
+                            </a>
+                            <button id="btn-sec-another" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors">
+                                Process Another Document
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        `;
+
+        // ─── LOCAL STATE ───────────────────────────
+        let state = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            previewUrl: '',
+            pdfDoc: null,
+        };
+
+        const uploadZone = document.getElementById('sec-upload-zone');
+        const uploadLoading = document.getElementById('sec-upload-loading');
+        const configZone = document.getElementById('sec-config-zone');
+        const successZone = document.getElementById('sec-success-zone');
+        const fileInput = document.getElementById('sec-file-input');
+
+        const renderPdfPreviewPage = async (pageNumber = 1) => {
+            if (!state.pdfDoc) return;
+            const loader = document.getElementById('sec-canvas-loader');
+            if (loader) loader.classList.remove('hidden');
+
+            try {
+                const page = await state.pdfDoc.getPage(pageNumber);
+                const viewport = page.getViewport({ scale: 1.2 });
+
+                const canvas = document.getElementById('sec-pdf-canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            } catch (e) {
+                console.error('PDF Preview render error', e);
+            } finally {
+                if (loader) loader.classList.add('hidden');
+            }
+        };
+
+        const handleFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadZone.classList.add('hidden');
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('tool_type', toolType);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/security/upload`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                const result = await resp.json();
+
+                if (!result.success || !result.document_id) {
+                    alert(result.error || 'Failed to upload document.');
+                    uploadLoading.classList.add('hidden');
+                    uploadZone.classList.remove('hidden');
+                    return;
+                }
+
+                state.documentId = result.document_id;
+                state.originalName = result.original_name;
+                state.totalPages = result.page_count;
+                state.previewUrl = result.preview_url;
+
+                document.getElementById('sec-summary-pages').textContent = `${state.totalPages} pages`;
+
+                uploadLoading.classList.add('hidden');
+                configZone.classList.remove('hidden');
+
+                if (typeof pdfjsLib !== 'undefined' && state.previewUrl) {
+                    try {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        state.pdfDoc = await pdfjsLib.getDocument(state.previewUrl).promise;
+                        renderPdfPreviewPage(1);
+                    } catch (err) {
+                        const loader = document.getElementById('sec-canvas-loader');
+                        if (loader) loader.classList.add('hidden');
+                    }
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                uploadZone.classList.remove('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('btn-sec-process').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-sec-process');
+            btn.disabled = true;
+            btn.textContent = 'Processing PDF...';
+
+            try {
+                const formData = new FormData();
+                formData.append('tool_type', toolType);
+
+                if (toolType === 'unlock-pdf') {
+                    formData.append('password', document.getElementById('sec-unlock-pass')?.value || '');
+                } else if (toolType === 'protect-pdf') {
+                    formData.append('password', document.getElementById('sec-protect-pass')?.value || '123456');
+                } else if (toolType === 'sign-pdf') {
+                    formData.append('signature[content]', document.getElementById('sec-sign-name')?.value || 'Authorized Signature');
+                    formData.append('signature[page]', document.getElementById('sec-sign-page')?.value === '1' ? 1 : state.totalPages);
+                } else if (toolType === 'redact-pdf') {
+                    const preset = document.getElementById('sec-redact-preset')?.value || 'header';
+                    let y = 15;
+                    if (preset === 'footer') y = 250;
+                    if (preset === 'middle') y = 120;
+                    formData.append('redactions[0][page]', 1);
+                    formData.append('redactions[0][x]', 20);
+                    formData.append('redactions[0][y]', y);
+                    formData.append('redactions[0][w]', 170);
+                    formData.append('redactions[0][h]', 20);
+                } else if (toolType === 'compare-pdf') {
+                    const secondFile = document.getElementById('sec-compare-file')?.files[0];
+                    if (secondFile) {
+                        formData.append('second_file', secondFile);
+                    }
+                }
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/security/process/${state.documentId}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                const result = await resp.json();
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-sec').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to process security action.');
+                    btn.disabled = false;
+                    btn.textContent = 'Process & Download PDF';
+                }
+            } catch (e) {
+                alert('Error processing PDF: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = 'Process & Download PDF';
+            }
+        });
+
+        document.getElementById('btn-sec-another').addEventListener('click', () => {
+            state = { documentId: null, originalName: '', totalPages: 0, previewUrl: '', pdfDoc: null };
             successZone.classList.add('hidden');
             uploadZone.classList.remove('hidden');
         });

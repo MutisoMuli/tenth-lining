@@ -64,6 +64,10 @@ Route::post('/api/tool/convert/process/{id}', [\App\Http\Controllers\ConvertPdfC
 Route::post('/api/tool/edit/upload', [\App\Http\Controllers\EditPdfController::class, 'upload'])->name('api.edit.upload');
 Route::post('/api/tool/edit/process/{id}', [\App\Http\Controllers\EditPdfController::class, 'process'])->name('api.edit.process');
 
+// PDF Security Tool Routes (Unlock PDF, Protect PDF, Sign PDF, Redact PDF, Compare PDF)
+Route::post('/api/tool/security/upload', [\App\Http\Controllers\SecurityPdfController::class, 'upload'])->name('api.security.upload');
+Route::post('/api/tool/security/process/{id}', [\App\Http\Controllers\SecurityPdfController::class, 'process'])->name('api.security.process');
+
 // PDF preview (serves file)
 Route::get('/preview/{id}', [DocumentController::class, 'preview'])->name('document.preview');
 
