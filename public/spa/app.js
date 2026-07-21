@@ -1157,6 +1157,54 @@ class App {
                     </div>
                 </div>
 
+                <!-- SAVE & CONFIRM MODAL -->
+                <div id="confirm-settings-modal" class="fixed inset-0 z-[60] hidden">
+                    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="confirm-modal-backdrop"></div>
+                    <div class="absolute inset-0 flex items-center justify-center p-4">
+                        <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-fade-in text-slate-800">
+                            <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="confirm-modal-close">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+
+                            <div class="text-center mb-5">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-700/10 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <h3 class="text-slate-800 font-bold text-lg">Confirm Your Settings</h3>
+                                <p class="text-slate-500 text-xs mt-1">Review your formatting settings before payment</p>
+                            </div>
+
+                            <!-- Settings Summary -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-3 text-left">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Page Numbering</span>
+                                    <span id="confirm-pn-status" class="text-xs font-bold px-2 py-0.5 rounded-md"></span>
+                                </div>
+                                <div id="confirm-pn-details" class="text-xs text-slate-500 space-y-1 pl-2 border-l-2 border-slate-200"></div>
+
+                                <div class="border-t border-slate-200 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Tenth Lining</span>
+                                    <span id="confirm-tl-status" class="text-xs font-bold px-2 py-0.5 rounded-md"></span>
+                                </div>
+                                <div id="confirm-tl-details" class="text-xs text-slate-500 space-y-1 pl-2 border-l-2 border-slate-200"></div>
+                            </div>
+
+                            <!-- Save status -->
+                            <div id="confirm-save-status" class="text-center text-xs text-slate-500 mb-3 h-5"></div>
+
+                            <!-- Warning if nothing enabled -->
+                            <div id="confirm-warning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-center">
+                                <p class="text-amber-700 text-xs font-bold">⚠️ No formatting is enabled. You will receive the original document without any changes.</p>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button id="btn-confirm-back" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Go Back & Edit</button>
+                                <button id="btn-confirm-proceed" class="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-purple-500/20">Confirm & Pay</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         `;
 
@@ -1801,9 +1849,138 @@ class App {
 
         btnSaveSettings.addEventListener('click', saveSettingsHandler);
 
+        // ─── CONFIRM SETTINGS BEFORE PAYMENT ────────────────────
+        const confirmModal = document.getElementById('confirm-settings-modal');
+        const confirmPnStatus = document.getElementById('confirm-pn-status');
+        const confirmPnDetails = document.getElementById('confirm-pn-details');
+        const confirmTlStatus = document.getElementById('confirm-tl-status');
+        const confirmTlDetails = document.getElementById('confirm-tl-details');
+        const confirmSaveStatus = document.getElementById('confirm-save-status');
+        const confirmWarning = document.getElementById('confirm-warning');
+        const btnConfirmBack = document.getElementById('btn-confirm-back');
+        const btnConfirmProceed = document.getElementById('btn-confirm-proceed');
+
+        function populateConfirmModal() {
+            const pnEnabled = pnEnabledInput.checked;
+            const tlEnabled = tlEnabledInput.checked;
+
+            // Page Numbering summary
+            if (pnEnabled) {
+                confirmPnStatus.textContent = 'Enabled';
+                confirmPnStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200';
+                confirmPnDetails.innerHTML = `
+                    <p>Font: <strong>${pnFontSelect.value}</strong> · Size: <strong>${pnSizeInput.value}pt</strong></p>
+                    <p>Starting number: <strong>${pnStartInput.value || 1}</strong> · Color: <span style="color:${pnColorInput.value};font-weight:bold;">■</span> ${pnColorInput.value}</p>
+                    <p>Position: Top <strong>${pnMarginTopInput.value || 15}mm</strong>, Right <strong>${pnMarginRightInput.value || 15}mm</strong></p>
+                `;
+            } else {
+                confirmPnStatus.textContent = 'Disabled';
+                confirmPnStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200';
+                confirmPnDetails.innerHTML = '<p class="text-slate-400 italic">No page numbers will be added</p>';
+            }
+
+            // Tenth Lining summary
+            if (tlEnabled) {
+                confirmTlStatus.textContent = 'Enabled';
+                confirmTlStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200';
+                confirmTlDetails.innerHTML = `
+                    <p>Font: <strong>${tlFontSelect.value}</strong> · Size: <strong>${tlSizeInput.value}pt</strong></p>
+                    <p>Badge color: <span style="color:${tlColorInput.value};font-weight:bold;">■</span> ${tlColorInput.value} · Line color: <span style="color:${tlLineColorInput.value};font-weight:bold;">■</span> ${tlLineColorInput.value}</p>
+                    <p>Line length: <strong>${tlLineLengthInput.value || 50}mm</strong> · Thickness: <strong>${tlLineThicknessInput.value || 1}pt</strong></p>
+                `;
+            } else {
+                confirmTlStatus.textContent = 'Disabled';
+                confirmTlStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200';
+                confirmTlDetails.innerHTML = '<p class="text-slate-400 italic">No tenth lining will be added</p>';
+            }
+
+            // Warning if nothing is enabled
+            if (!pnEnabled && !tlEnabled) {
+                confirmWarning.classList.remove('hidden');
+            } else {
+                confirmWarning.classList.add('hidden');
+            }
+
+            confirmSaveStatus.textContent = '';
+        }
+
+        async function autoSaveSettings() {
+            confirmSaveStatus.textContent = '💾 Saving settings...';
+            confirmSaveStatus.className = 'text-center text-xs text-slate-500 mb-3 h-5';
+
+            const payload = {
+                page_number_settings: {
+                    enabled: pnEnabledInput.checked,
+                    font: pnFontSelect.value,
+                    font_size: parseInt(pnSizeInput.value),
+                    colour: pnColorInput.value,
+                    bold: pnBoldBtn.classList.contains('bg-purple-600'),
+                    italic: pnItalicBtn.classList.contains('bg-purple-600'),
+                    starting_number: parseInt(pnStartInput.value) || 1,
+                    margin_top: parseInt(pnMarginTopInput.value) || 15,
+                    margin_right: parseInt(pnMarginRightInput.value) || 15,
+                },
+                tenth_line_settings: {
+                    enabled: tlEnabledInput.checked,
+                    font: tlFontSelect.value,
+                    font_size: parseInt(tlSizeInput.value),
+                    colour: tlColorInput.value,
+                    bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                    right_margin: parseInt(tlMarginInput.value) || 30,
+                    line_length: parseInt(tlLineLengthInput.value) || 50,
+                    line_thickness: parseFloat(tlLineThicknessInput.value) || 1,
+                    line_colour: tlLineColorInput.value,
+                }
+            };
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/document/${id}/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify(payload)
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    confirmSaveStatus.textContent = '✓ Settings saved successfully';
+                    confirmSaveStatus.className = 'text-center text-xs text-green-600 font-bold mb-3 h-5';
+                    return true;
+                } else {
+                    confirmSaveStatus.textContent = '✗ Failed to save settings';
+                    confirmSaveStatus.className = 'text-center text-xs text-red-600 font-bold mb-3 h-5';
+                    return false;
+                }
+            } catch (e) {
+                confirmSaveStatus.textContent = '✗ Network error saving settings';
+                confirmSaveStatus.className = 'text-center text-xs text-red-600 font-bold mb-3 h-5';
+                return false;
+            }
+        }
+
         // ─── PAYMENT FLOW CONTROLLER ────────────────────────────
-        btnPayAction.addEventListener('click', () => {
-            // Reset payment step view
+        btnPayAction.addEventListener('click', async () => {
+            // Show confirm modal with settings summary
+            populateConfirmModal();
+            confirmModal.classList.remove('hidden');
+
+            // Auto-save settings in the background
+            await autoSaveSettings();
+        });
+
+        btnConfirmBack.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirm-modal-backdrop').addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirm-modal-close').addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+        });
+
+        btnConfirmProceed.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            // Open payment modal
             document.getElementById('payment-step-phone').classList.remove('hidden');
             document.getElementById('payment-step-waiting').classList.add('hidden');
             document.getElementById('payment-step-success').classList.add('hidden');
