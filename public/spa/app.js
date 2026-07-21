@@ -143,6 +143,16 @@ class App {
             }
         }
 
+        if (hash === '#/tool/merge-pdf') {
+            this.renderMergePdfTool();
+            return;
+        }
+
+        if (hash === '#/tool/split-pdf') {
+            this.renderSplitPdfTool();
+            return;
+        }
+
         const routeHandler = this.routes[hash] || this.routes['#/'];
         routeHandler();
     }
@@ -163,20 +173,159 @@ class App {
     renderHome() {
         this.appEl.innerHTML = `
             <!-- Navigation -->
-            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/80">
-                <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
                     <a href="#/" class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg">T</div>
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
                         <div>
-                            <span class="font-bold text-lg text-slate-900 tracking-tight">Tenth Lining</span>
-                            <span class="text-[10px] block text-purple-600 -mt-1 tracking-widest uppercase font-semibold">by Bizlyn Systems</span>
+                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
+                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
                         </div>
                     </a>
-                    <div class="hidden md:flex items-center gap-6 text-sm">
-                        <a href="#/" id="nav-features-link" class="text-slate-600 hover:text-purple-600 transition-colors font-medium">Features</a>
-                        <a href="#/" id="nav-pricing-link" class="text-slate-600 hover:text-purple-600 transition-colors font-medium">Pricing</a>
-                        <a href="#/" id="nav-how-link" class="text-slate-600 hover:text-purple-600 transition-colors font-medium">How It Works</a>
-                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition-all duration-200 font-medium">Dashboard</a>
+
+                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <a href="#/tool/merge-pdf" class="hover:text-purple-600 transition-colors py-2">MERGE PDF</a>
+                        <a href="#/tool/split-pdf" class="hover:text-purple-600 transition-colors py-2">SPLIT PDF</a>
+                        <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
+
+                        <!-- CONVERT PDF Dropdown -->
+                        <div class="relative group">
+                            <button class="flex items-center gap-1 py-2 hover:text-purple-600 transition-colors uppercase font-bold focus:outline-none">
+                                CONVERT PDF
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 hidden group-hover:block hover:block animate-fade-in z-50">
+                                <div class="grid grid-cols-2 gap-6 text-left normal-case">
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
+                                        <div class="space-y-2">
+                                            <a href="#/tool/jpg-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[10px]">JPG</span> JPG to PDF
+                                            </a>
+                                            <a href="#/tool/word-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> WORD to PDF
+                                            </a>
+                                            <a href="#/tool/powerpoint-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> POWERPOINT to PDF
+                                            </a>
+                                            <a href="#/tool/excel-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px]">XLS</span> EXCEL to PDF
+                                            </a>
+                                            <a href="#/tool/html-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[10px]">HTML</span> HTML to PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT FROM PDF</h4>
+                                        <div class="space-y-2">
+                                            <a href="#/tool/pdf-to-jpg" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[10px]">JPG</span> PDF to JPG
+                                            </a>
+                                            <a href="#/tool/pdf-to-word" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> PDF to WORD
+                                            </a>
+                                            <a href="#/tool/pdf-to-powerpoint" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> PDF to POWERPOINT
+                                            </a>
+                                            <a href="#/tool/pdf-to-excel" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px]">XLS</span> PDF to EXCEL
+                                            </a>
+                                            <a href="#/tool/pdf-to-pdfa" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[10px]">PDFA</span> PDF to PDF/A
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ALL PDF TOOLS Mega-Menu Dropdown -->
+                        <div class="relative group">
+                            <button class="flex items-center gap-1 py-2 text-purple-600 hover:text-purple-700 transition-colors uppercase font-extrabold focus:outline-none">
+                                ALL PDF TOOLS
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="fixed left-1/2 -translate-x-1/2 top-16 w-[1100px] max-w-[95vw] bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 hidden group-hover:block hover:block animate-fade-in z-50 max-h-[85vh] overflow-y-auto">
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-left normal-case">
+                                    <!-- ORGANIZE PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-red-500 uppercase tracking-wider mb-3">ORGANIZE PDF</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/merge-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Merge PDF</a>
+                                            <a href="#/tool/split-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Split PDF</a>
+                                            <a href="#/tool/remove-pages" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Remove pages</a>
+                                            <a href="#/tool/extract-pages" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Extract pages</a>
+                                            <a href="#/tool/organize-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Organize PDF</a>
+                                            <a href="#/tool/scan-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Scan to PDF</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- OPTIMIZE PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-green-600 uppercase tracking-wider mb-3">OPTIMIZE PDF</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/compress-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Compress PDF</a>
+                                            <a href="#/tool/repair-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Repair PDF</a>
+                                            <a href="#/tool/ocr-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">OCR PDF</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- CONVERT TO PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/jpg-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">JPG to PDF</a>
+                                            <a href="#/tool/word-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">WORD to PDF</a>
+                                            <a href="#/tool/powerpoint-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">POWERPOINT to PDF</a>
+                                            <a href="#/tool/excel-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">EXCEL to PDF</a>
+                                            <a href="#/tool/html-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">HTML to PDF</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- CONVERT FROM PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-blue-600 uppercase tracking-wider mb-3">CONVERT FROM PDF</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/pdf-to-jpg" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to JPG</a>
+                                            <a href="#/tool/pdf-to-word" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to WORD</a>
+                                            <a href="#/tool/pdf-to-powerpoint" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to POWERPOINT</a>
+                                            <a href="#/tool/pdf-to-excel" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to EXCEL</a>
+                                            <a href="#/tool/pdf-to-pdfa" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to PDF/A</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- EDIT PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-purple-600 uppercase tracking-wider mb-3">EDIT PDF</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/rotate-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Rotate PDF</a>
+                                            <a href="#/tool/add-page-numbers" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Add page numbers</a>
+                                            <a href="#/tool/add-watermark" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Add watermark</a>
+                                            <a href="#/tool/crop-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Crop PDF</a>
+                                            <a href="#/tool/edit-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Edit PDF</a>
+                                            <a href="#/tool/pdf-forms" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF Forms</a>
+                                        </div>
+                                    </div>
+
+                                    <!-- PDF SECURITY -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-indigo-600 uppercase tracking-wider mb-3">PDF SECURITY</h4>
+                                        <div class="space-y-1.5">
+                                            <a href="#/tool/unlock-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Unlock PDF</a>
+                                            <a href="#/tool/protect-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Protect PDF</a>
+                                            <a href="#/tool/sign-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Sign PDF</a>
+                                            <a href="#/tool/redact-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Redact PDF</a>
+                                            <a href="#/tool/compare-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Compare PDF</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
                     </div>
                 </div>
             </nav>
@@ -889,10 +1038,14 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Bold, Badge Color & Pointer Line Color -->
-                            <div class="flex items-center gap-1 mt-2.5">
+                            <!-- Bold, Badge Toggle, Badge Color & Pointer Line Color -->
+                            <div class="flex items-center gap-1.5 mt-2.5">
                                 <button id="tl-bold" class="w-5 h-5 border border-slate-200 rounded text-[10px] font-bold flex items-center justify-center transition-colors bg-slate-100 text-slate-700" title="Bold Badge Text">B</button>
-                                <input type="color" id="tl-color" value="#000000" title="Badge Text & Fill Color" class="w-5 h-5 border border-slate-200 rounded cursor-pointer">
+                                <label class="flex items-center gap-0.5 cursor-pointer" title="Show/hide background badge behind line numbers">
+                                    <input type="checkbox" id="tl-badge" checked class="w-3 h-3 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
+                                    <span class="text-[8px] text-slate-500 font-bold uppercase">Badge</span>
+                                </label>
+                                <input type="color" id="tl-color" value="#000000" title="Badge / Number Color" class="w-5 h-5 border border-slate-200 rounded cursor-pointer">
                                 <input type="color" id="tl-line-color" value="#000000" title="Pointer Line Mark Color" class="w-5 h-5 border border-slate-200 rounded cursor-pointer">
                             </div>
 
@@ -1218,6 +1371,7 @@ class App {
         const tlBoldBtn = document.getElementById('tl-bold');
         const tlColorInput = document.getElementById('tl-color');
         const tlLineColorInput = document.getElementById('tl-line-color');
+        const tlBadgeInput = document.getElementById('tl-badge');
 
         const pnEnabledInput = document.getElementById('pn-enabled');
         const pnFontSelect = document.getElementById('pn-font');
@@ -1333,6 +1487,7 @@ class App {
             if (tlSet.line_thickness) tlLineThicknessInput.value = tlSet.line_thickness;
             if (tlSet.colour) tlColorInput.value = tlSet.colour;
             if (tlSet.line_colour) tlLineColorInput.value = tlSet.line_colour;
+            if (tlSet.show_badge !== undefined) tlBadgeInput.checked = tlSet.show_badge !== false;
             if (tlSet.bold) {
                 tlBoldBtn.classList.add('bg-purple-600', 'text-white');
                 tlBoldBtn.classList.remove('bg-slate-100', 'text-slate-700');
@@ -1528,6 +1683,7 @@ class App {
                 fontSize: parseInt(tlSizeInput.value) || 12,
                 color: tlColorInput.value,
                 bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                showBadge: tlBadgeInput.checked,
                 rightMargin: parseInt(tlMarginInput.value) || 30,
                 font: tlFontSelect.value,
                 lineLength: parseInt(tlLineLengthInput.value) || 50,
@@ -1592,8 +1748,16 @@ class App {
                             badge.className = 'overlay-tenth-line-badge';
                             badge.textContent = lineNumber;
                             badge.style.fontSize = tlSettings.fontSize + 'px';
-                            badge.style.backgroundColor = tlSettings.color;
                             badge.style.fontWeight = tlSettings.bold ? 'bold' : 'normal';
+
+                            if (tlSettings.showBadge) {
+                                badge.style.backgroundColor = tlSettings.color;
+                                badge.style.color = '#ffffff';
+                            } else {
+                                badge.style.backgroundColor = 'transparent';
+                                badge.style.color = tlSettings.color;
+                                badge.style.padding = '0';
+                            }
                             badge.style.fontFamily = getFontFamily(tlSettings.font);
 
                             makeDraggableHorizontal(badge, overlay);
@@ -1703,7 +1867,7 @@ class App {
 
         // ─── CONTROL CONTROLLER LISTENERS ───────────────────────
         const inputsToListen = [
-            tlEnabledInput, tlFontSelect, tlSizeInput, tlMarginInput, tlLineLengthInput, tlLineThicknessInput, tlColorInput, tlLineColorInput,
+            tlEnabledInput, tlFontSelect, tlSizeInput, tlMarginInput, tlLineLengthInput, tlLineThicknessInput, tlColorInput, tlLineColorInput, tlBadgeInput,
             pnEnabledInput, pnFontSelect, pnStartInput, pnSizeInput, pnMarginTopInput, pnMarginRightInput, pnColorInput
         ];
 
@@ -1818,6 +1982,7 @@ class App {
                     font_size: parseInt(tlSizeInput.value),
                     colour: tlColorInput.value,
                     bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                    show_badge: tlBadgeInput.checked,
                     right_margin: parseInt(tlMarginInput.value) || 30,
                     line_length: parseInt(tlLineLengthInput.value) || 50,
                     line_thickness: parseFloat(tlLineThicknessInput.value) || 1,
@@ -1884,8 +2049,8 @@ class App {
                 confirmTlStatus.textContent = 'Enabled';
                 confirmTlStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200';
                 confirmTlDetails.innerHTML = `
-                    <p>Font: <strong>${tlFontSelect.value}</strong> · Size: <strong>${tlSizeInput.value}pt</strong></p>
-                    <p>Badge color: <span style="color:${tlColorInput.value};font-weight:bold;">■</span> ${tlColorInput.value} · Line color: <span style="color:${tlLineColorInput.value};font-weight:bold;">■</span> ${tlLineColorInput.value}</p>
+                    <p>Font: <strong>${tlFontSelect.value}</strong> · Size: <strong>${tlSizeInput.value}pt</strong> · Badge: <strong>${tlBadgeInput.checked ? 'On' : 'Off'}</strong></p>
+                    <p>Color: <span style="color:${tlColorInput.value};font-weight:bold;">■</span> ${tlColorInput.value} · Line color: <span style="color:${tlLineColorInput.value};font-weight:bold;">■</span> ${tlLineColorInput.value}</p>
                     <p>Line length: <strong>${tlLineLengthInput.value || 50}mm</strong> · Thickness: <strong>${tlLineThicknessInput.value || 1}pt</strong></p>
                 `;
             } else {
@@ -1926,6 +2091,7 @@ class App {
                     font_size: parseInt(tlSizeInput.value),
                     colour: tlColorInput.value,
                     bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                    show_badge: tlBadgeInput.checked,
                     right_margin: parseInt(tlMarginInput.value) || 30,
                     line_length: parseInt(tlLineLengthInput.value) || 50,
                     line_thickness: parseFloat(tlLineThicknessInput.value) || 1,
@@ -2102,6 +2268,7 @@ class App {
                             font_size: parseInt(tlSizeInput.value),
                             colour: tlColorInput.value,
                             bold: tlBoldBtn.classList.contains('bg-purple-600'),
+                            show_badge: tlBadgeInput.checked,
                             right_margin: parseInt(tlMarginInput.value) || 30,
                             line_length: parseInt(tlLineLengthInput.value) || 50,
                             line_thickness: parseFloat(tlLineThicknessInput.value) || 1,
@@ -2162,6 +2329,1000 @@ class App {
             </div>
         `;
     }
+
+    // ─── VIEW 4: MERGE PDF TOOL ─────────────────────────────────
+    renderMergePdfTool() {
+        this.appEl.innerHTML = `
+            <!-- Navigation -->
+            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                    <a href="#/" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
+                        <div>
+                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
+                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
+                        </div>
+                    </a>
+
+                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <a href="#/tool/merge-pdf" class="text-purple-600 transition-colors py-2 font-black">MERGE PDF</a>
+                        <a href="#/tool/split-pdf" class="hover:text-purple-600 transition-colors py-2">SPLIT PDF</a>
+                        <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-sm">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586A2 2 0 0116 3.586L19.414 7A2 2 0 0120 8.414V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Merge PDF Files</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Combine multiple PDFs into a single unified document in the order you want. KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone (Visible when no files uploaded) -->
+                    <div id="merge-upload-zone" class="max-w-xl mx-auto">
+                        <label id="merge-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-red-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-red-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-red-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-red-500">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">Select PDF files to merge</p>
+                                        <p class="text-slate-500 text-sm">or drop PDFs here · Select 2 or more files</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="merge-file-input" class="hidden" accept=".pdf,.doc,.docx" multiple>
+                            </div>
+                        </label>
+
+                        <!-- Upload loading indicator -->
+                        <div id="merge-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Uploading and analyzing files...</p>
+                            <p class="text-slate-500 text-xs mt-1">Extracting page counts for pricing calculation</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: File Queue & Ordering List (Visible after files uploaded) -->
+                    <div id="merge-queue-zone" class="hidden max-w-3xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left: Selected Files List -->
+                            <div class="md:col-span-2 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-slate-900 font-extrabold text-base flex items-center gap-2">
+                                        Files to Merge (<span id="merge-file-count">0</span>)
+                                    </h3>
+                                    <label class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                        Add More Files
+                                        <input type="file" id="merge-add-file-input" class="hidden" accept=".pdf,.doc,.docx" multiple>
+                                    </label>
+                                </div>
+
+                                <div id="merge-file-items" class="space-y-3">
+                                    <!-- File items rendered dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Right: Order Summary & Payment Button -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Merge Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span>Total Documents</span>
+                                        <strong id="summary-doc-count" class="text-slate-900">0</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Total Page Count</span>
+                                        <strong id="summary-page-count" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="summary-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-merge-pay" class="w-full py-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Merge PDF & Pay
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone (Visible after payment & merge complete) -->
+                    <div id="merge-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">PDF Files Merged!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your combined PDF document is formatted and ready for download.</p>
+                        
+                        <a id="btn-download-merged" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download Merged PDF
+                        </a>
+
+                        <button id="btn-merge-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Merge Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="merge-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="merge-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="merge-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/10 to-red-700/10 flex items-center justify-center mx-auto mb-3 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">Merge PDF Tool · <span id="merge-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="merge-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="merge-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-red-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-merge-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-red-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="merge-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="merge-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="merge-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-merge-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ─── MERGE TOOL CONTROLLER LOGIC ───────────────────────
+        let currentMergeState = {
+            documentId: null,
+            files: [],
+            totalPages: 0,
+            totalCost: 0,
+            paymentPollingInterval: null,
+        };
+
+        const fileInput = document.getElementById('merge-file-input');
+        const addFileInput = document.getElementById('merge-add-file-input');
+        const uploadZone = document.getElementById('merge-upload-zone');
+        const uploadLoading = document.getElementById('merge-upload-loading');
+        const queueZone = document.getElementById('merge-queue-zone');
+        const successZone = document.getElementById('merge-success-zone');
+        const fileItemsContainer = document.getElementById('merge-file-items');
+
+        const paymentModal = document.getElementById('merge-payment-modal');
+        const btnPay = document.getElementById('btn-merge-pay');
+        const btnStkSubmit = document.getElementById('btn-merge-stk-submit');
+
+        const handleFileSelect = async (files) => {
+            if (!files || files.length < 2) {
+                alert('Please select at least 2 PDF or Word documents to merge.');
+                return;
+            }
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/merge/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                let result = {};
+                try {
+                    result = await resp.json();
+                } catch (jsonErr) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    currentMergeState.documentId = result.document_id;
+                    currentMergeState.files = result.files;
+                    currentMergeState.totalPages = result.total_pages;
+                    currentMergeState.totalCost = result.cost;
+
+                    renderQueueState();
+                } else {
+                    alert(result.error || result.message || 'Failed to upload files for merging.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
+        addFileInput.addEventListener('change', async (e) => {
+            const newFiles = Array.from(e.target.files);
+            if (newFiles.length > 0) {
+                // Combine existing and new files
+                await handleFileSelect(newFiles);
+            }
+        });
+
+        // Drag & Drop handlers
+        const dropArea = document.getElementById('merge-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-red-500', 'bg-red-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-red-500', 'bg-red-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files);
+            }
+        });
+
+        const renderQueueState = () => {
+            uploadZone.classList.add('hidden');
+            queueZone.classList.remove('hidden');
+
+            document.getElementById('merge-file-count').textContent = currentMergeState.files.length;
+            document.getElementById('summary-doc-count').textContent = currentMergeState.files.length;
+            document.getElementById('summary-page-count').textContent = `${currentMergeState.totalPages} pages`;
+            document.getElementById('summary-total-cost').textContent = `KES ${currentMergeState.totalCost}`;
+            document.getElementById('merge-modal-amount').textContent = `KES ${currentMergeState.totalCost}`;
+
+            fileItemsContainer.innerHTML = '';
+
+            currentMergeState.files.forEach((file, idx) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow';
+                itemEl.innerHTML = `
+                    <div class="flex items-center gap-3 truncate">
+                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center font-black text-xs flex-shrink-0">
+                            ${idx + 1}
+                        </div>
+                        <div class="truncate">
+                            <h5 class="text-sm font-bold text-slate-800 truncate" title="${file.original_name}">${file.original_name}</h5>
+                            <p class="text-xs text-slate-500 font-medium">${file.page_count} pages · ${(file.file_size / (1024 * 1024)).toFixed(2)} MB</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button data-action="up" data-index="${idx}" class="btn-order-up p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <button data-action="down" data-index="${idx}" class="btn-order-down p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors ${idx === currentMergeState.files.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <button data-action="delete" data-index="${idx}" class="btn-order-del p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                `;
+                fileItemsContainer.appendChild(itemEl);
+            });
+
+            // Add button listeners for reordering and deleting
+            fileItemsContainer.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const button = e.currentTarget;
+                    const action = button.dataset.action;
+                    const index = parseInt(button.dataset.index);
+
+                    if (action === 'up' && index > 0) {
+                        const temp = currentMergeState.files[index];
+                        currentMergeState.files[index] = currentMergeState.files[index - 1];
+                        currentMergeState.files[index - 1] = temp;
+                        renderQueueState();
+                    } else if (action === 'down' && index < currentMergeState.files.length - 1) {
+                        const temp = currentMergeState.files[index];
+                        currentMergeState.files[index] = currentMergeState.files[index + 1];
+                        currentMergeState.files[index + 1] = temp;
+                        renderQueueState();
+                    } else if (action === 'delete') {
+                        currentMergeState.files.splice(index, 1);
+                        if (currentMergeState.files.length < 2) {
+                            queueZone.classList.add('hidden');
+                            uploadZone.classList.remove('hidden');
+                            return;
+                        }
+                        // Recalculate total pages
+                        currentMergeState.totalPages = currentMergeState.files.reduce((acc, f) => acc + f.page_count, 0);
+                        currentMergeState.totalCost = currentMergeState.totalPages * 1;
+                        renderQueueState();
+                    }
+                });
+            });
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('merge-step-phone').classList.remove('hidden');
+            document.getElementById('merge-step-waiting').classList.add('hidden');
+            document.getElementById('merge-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('merge-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('merge-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('merge-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('merge-step-phone').classList.add('hidden');
+            document.getElementById('merge-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: currentMergeState.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startMergePaymentPolling(result.checkout_request_id);
+                } else {
+                    showMergePaymentFailed(result.message || 'Failed to initiate M-Pesa STK push.');
+                }
+            } catch (e) {
+                showMergePaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startMergePaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (currentMergeState.paymentPollingInterval) clearInterval(currentMergeState.paymentPollingInterval);
+
+            currentMergeState.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(currentMergeState.paymentPollingInterval);
+                        executeMergeProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(currentMergeState.paymentPollingInterval);
+                        showMergePaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(currentMergeState.paymentPollingInterval);
+                    showMergePaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showMergePaymentFailed = (msg) => {
+            document.getElementById('merge-step-waiting').classList.add('hidden');
+            document.getElementById('merge-step-failed').classList.remove('hidden');
+            document.getElementById('merge-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-merge-retry').addEventListener('click', () => {
+            document.getElementById('merge-step-failed').classList.add('hidden');
+            document.getElementById('merge-step-phone').classList.remove('hidden');
+        });
+
+        const executeMergeProcess = async () => {
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/merge/process/${currentMergeState.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ files: currentMergeState.files }),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    queueZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-merged').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to generate merged PDF.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error processing merge. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-merge-another').addEventListener('click', () => {
+            currentMergeState = { documentId: null, files: [], totalPages: 0, totalCost: 0, paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
+
+    // ─── VIEW 5: SPLIT PDF TOOL ─────────────────────────────────
+    renderSplitPdfTool() {
+        this.appEl.innerHTML = `
+            <!-- Navigation -->
+            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                    <a href="#/" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
+                        <div>
+                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
+                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
+                        </div>
+                    </a>
+
+                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <a href="#/tool/merge-pdf" class="hover:text-purple-600 transition-colors py-2">MERGE PDF</a>
+                        <a href="#/tool/split-pdf" class="text-purple-600 transition-colors py-2 font-black">SPLIT PDF</a>
+                        <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-100 shadow-sm">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Split PDF Document</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Extract specific pages or split your PDF into custom page range segments. KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="split-upload-zone" class="max-w-xl mx-auto">
+                        <label id="split-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-amber-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-amber-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-amber-600">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">Select PDF file to split</p>
+                                        <p class="text-slate-500 text-sm">or drop PDF here · PDF, DOC, DOCX up to 100MB</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="split-file-input" class="hidden" accept=".pdf,.doc,.docx">
+                            </div>
+                        </label>
+
+                        <div id="split-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Analyzing PDF structure...</p>
+                            <p class="text-slate-500 text-xs mt-1">Extracting total page count for split configuration</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Split Options & Summary Zone -->
+                    <div id="split-config-zone" class="hidden max-w-3xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left: Options Panel -->
+                            <div class="md:col-span-2 space-y-5">
+                                
+                                <!-- Mode Selector Tabs -->
+                                <div class="bg-slate-200/70 p-1 rounded-2xl flex text-xs font-extrabold text-slate-600">
+                                    <button id="tab-split-ranges" class="flex-1 py-2.5 rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center">
+                                        Custom Ranges
+                                    </button>
+                                    <button id="tab-split-all" class="flex-1 py-2.5 rounded-xl hover:text-slate-900 transition-all text-center">
+                                        Extract All Pages
+                                    </button>
+                                    <button id="tab-split-extract" class="flex-1 py-2.5 rounded-xl hover:text-slate-900 transition-all text-center">
+                                        Select Pages
+                                    </button>
+                                </div>
+
+                                <!-- Option Panel 1: Custom Ranges -->
+                                <div id="panel-split-ranges" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="font-bold text-slate-800 text-sm">Range Segments</h4>
+                                        <button id="btn-add-range" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                                            + Add Range
+                                        </button>
+                                    </div>
+                                    <div id="range-items-container" class="space-y-3">
+                                        <!-- Dynamic range items -->
+                                    </div>
+                                </div>
+
+                                <!-- Option Panel 2: Extract All Pages -->
+                                <div id="panel-split-all" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center">
+                                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                    </div>
+                                    <h4 class="font-bold text-slate-900 text-sm mb-1">Extract Every Page</h4>
+                                    <p class="text-slate-500 text-xs leading-relaxed max-w-sm mx-auto">Every page of your document will be separated into an individual 1-page PDF file and packaged in a ZIP archive.</p>
+                                </div>
+
+                                <!-- Option Panel 3: Select Specific Pages -->
+                                <div id="panel-split-extract" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                                    <h4 class="font-bold text-slate-800 text-sm">Pages to Extract</h4>
+                                    <p class="text-xs text-slate-500">Enter individual page numbers or ranges separated by commas (e.g. <code class="bg-slate-100 px-1.5 py-0.5 rounded text-amber-700 font-mono">1, 3, 5-8</code>):</p>
+                                    <input type="text" id="split-pages-input" placeholder="e.g. 1, 3, 5-8" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:border-amber-500 focus:outline-none">
+                                </div>
+
+                            </div>
+
+                            <!-- Right: Summary Card & Pay Button -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Split Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div>
+                                        <span class="block text-slate-400 font-medium text-[10px] uppercase">Document</span>
+                                        <strong id="split-filename" class="text-slate-900 font-bold block truncate">Document.pdf</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="split-total-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="split-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-split-pay" class="w-full py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Split PDF & Pay
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="split-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">PDF Split Completed!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your split documents are ready for download as a ZIP archive.</p>
+                        
+                        <a id="btn-download-split" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download Split PDF Archive
+                        </a>
+
+                        <button id="btn-split-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Split Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="split-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="split-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="split-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-700/10 flex items-center justify-center mx-auto mb-3 text-amber-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">Split PDF Tool · <span id="split-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="split-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="split-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-amber-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-split-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 text-sm font-bold rounded-xl transition-all shadow-md shadow-amber-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="split-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="split-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="split-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-split-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ─── SPLIT CONTROLLER LOGIC ─────────────────────────────
+        let currentSplitState = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            totalCost: 0,
+            mode: 'ranges', // 'ranges', 'all', 'extract'
+            ranges: [{ from: 1, to: 1 }],
+            paymentPollingInterval: null,
+        };
+
+        const fileInput = document.getElementById('split-file-input');
+        const uploadZone = document.getElementById('split-upload-zone');
+        const uploadLoading = document.getElementById('split-upload-loading');
+        const configZone = document.getElementById('split-config-zone');
+        const successZone = document.getElementById('split-success-zone');
+        const rangeContainer = document.getElementById('range-items-container');
+
+        const tabRanges = document.getElementById('tab-split-ranges');
+        const tabAll = document.getElementById('tab-split-all');
+        const tabExtract = document.getElementById('tab-split-extract');
+
+        const panelRanges = document.getElementById('panel-split-ranges');
+        const panelAll = document.getElementById('panel-split-all');
+        const panelExtract = document.getElementById('panel-split-extract');
+
+        const paymentModal = document.getElementById('split-payment-modal');
+        const btnPay = document.getElementById('btn-split-pay');
+        const btnStkSubmit = document.getElementById('btn-split-stk-submit');
+
+        const handleSplitFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/split/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    currentSplitState.documentId = result.document_id;
+                    currentSplitState.originalName = result.original_name;
+                    currentSplitState.totalPages = result.page_count;
+                    currentSplitState.totalCost = result.cost;
+
+                    // Initialize default split range
+                    const mid = max(1, Math.ceil(result.page_count / 2));
+                    currentSplitState.ranges = [
+                        { from: 1, to: mid },
+                        { from: Math.min(result.page_count, mid + 1), to: result.page_count }
+                    ];
+
+                    renderSplitConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload PDF for splitting.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleSplitFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Drag & Drop
+        const dropArea = document.getElementById('split-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-amber-500', 'bg-amber-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-amber-500', 'bg-amber-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleSplitFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Mode Tab Switching
+        const switchMode = (mode) => {
+            currentSplitState.mode = mode;
+            [tabRanges, tabAll, tabExtract].forEach(t => t.className = 'flex-1 py-2.5 rounded-xl hover:text-slate-900 transition-all text-center');
+            [panelRanges, panelAll, panelExtract].forEach(p => p.classList.add('hidden'));
+
+            if (mode === 'ranges') {
+                tabRanges.className = 'flex-1 py-2.5 rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center font-black';
+                panelRanges.classList.remove('hidden');
+            } else if (mode === 'all') {
+                tabAll.className = 'flex-1 py-2.5 rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center font-black';
+                panelAll.classList.remove('hidden');
+            } else if (mode === 'extract') {
+                tabExtract.className = 'flex-1 py-2.5 rounded-xl bg-white text-slate-900 shadow-sm transition-all text-center font-black';
+                panelExtract.classList.remove('hidden');
+            }
+        };
+
+        tabRanges.addEventListener('click', () => switchMode('ranges'));
+        tabAll.addEventListener('click', () => switchMode('all'));
+        tabExtract.addEventListener('click', () => switchMode('extract'));
+
+        const renderSplitConfigState = () => {
+            uploadZone.classList.add('hidden');
+            configZone.classList.remove('hidden');
+
+            document.getElementById('split-filename').textContent = currentSplitState.originalName;
+            document.getElementById('split-total-pages').textContent = `${currentSplitState.totalPages} pages`;
+            document.getElementById('split-total-cost').textContent = `KES ${currentSplitState.totalCost}`;
+            document.getElementById('split-modal-amount').textContent = `KES ${currentSplitState.totalCost}`;
+
+            renderRangesList();
+        };
+
+        const renderRangesList = () => {
+            rangeContainer.innerHTML = '';
+
+            currentSplitState.ranges.forEach((r, idx) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl';
+                item.innerHTML = `
+                    <span class="text-xs font-bold text-slate-400 w-16">Range ${idx + 1}</span>
+                    <div class="flex items-center gap-2 flex-1">
+                        <span class="text-xs text-slate-500 font-medium">From</span>
+                        <input type="number" min="1" max="${currentSplitState.totalPages}" value="${r.from}" data-index="${idx}" data-field="from" class="range-input w-16 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center py-1">
+                        <span class="text-xs text-slate-500 font-medium">To</span>
+                        <input type="number" min="1" max="${currentSplitState.totalPages}" value="${r.to}" data-index="${idx}" data-field="to" class="range-input w-16 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center py-1">
+                    </div>
+                    <button data-index="${idx}" class="btn-remove-range p-1 text-slate-400 hover:text-red-500 transition-colors ${currentSplitState.ranges.length === 1 ? 'hidden' : ''}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                `;
+                rangeContainer.appendChild(item);
+            });
+
+            rangeContainer.querySelectorAll('.range-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.index);
+                    const field = e.target.dataset.field;
+                    const val = parseInt(e.target.value) || 1;
+                    currentSplitState.ranges[idx][field] = val;
+                });
+            });
+
+            rangeContainer.querySelectorAll('.btn-remove-range').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.currentTarget.dataset.index);
+                    currentSplitState.ranges.splice(idx, 1);
+                    renderRangesList();
+                });
+            });
+        };
+
+        document.getElementById('btn-add-range').addEventListener('click', () => {
+            const lastRange = currentSplitState.ranges[currentSplitState.ranges.length - 1] || { to: 0 };
+            const nextFrom = Math.min(currentSplitState.totalPages, (lastRange.to || 1) + 1);
+            currentSplitState.ranges.push({ from: nextFrom, to: currentSplitState.totalPages });
+            renderRangesList();
+        });
+
+        // Helper max
+        function max(a, b) { return a > b ? a : b; }
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('split-step-phone').classList.remove('hidden');
+            document.getElementById('split-step-waiting').classList.add('hidden');
+            document.getElementById('split-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('split-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('split-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('split-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('split-step-phone').classList.add('hidden');
+            document.getElementById('split-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: currentSplitState.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startSplitPaymentPolling(result.checkout_request_id);
+                } else {
+                    showSplitPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showSplitPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startSplitPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (currentSplitState.paymentPollingInterval) clearInterval(currentSplitState.paymentPollingInterval);
+
+            currentSplitState.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(currentSplitState.paymentPollingInterval);
+                        executeSplitProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(currentSplitState.paymentPollingInterval);
+                        showSplitPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(currentSplitState.paymentPollingInterval);
+                    showSplitPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showSplitPaymentFailed = (msg) => {
+            document.getElementById('split-step-waiting').classList.add('hidden');
+            document.getElementById('split-step-failed').classList.add('hidden');
+            document.getElementById('split-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-split-retry').addEventListener('click', () => {
+            document.getElementById('split-step-failed').classList.add('hidden');
+            document.getElementById('split-step-phone').classList.remove('hidden');
+        });
+
+        const executeSplitProcess = async () => {
+            try {
+                let payloadPages = [];
+                if (currentSplitState.mode === 'extract') {
+                    const pageText = document.getElementById('split-pages-input').value.trim();
+                    if (pageText) {
+                        pageText.split(',').forEach(p => {
+                            p = p.trim();
+                            if (p.includes('-')) {
+                                const parts = p.split('-').map(x => parseInt(x.trim()));
+                                if (parts[0] && parts[1]) {
+                                    for (let i = parts[0]; i <= parts[1]; i++) payloadPages.push(i);
+                                }
+                            } else if (parseInt(p)) {
+                                payloadPages.push(parseInt(p));
+                            }
+                        });
+                    }
+                }
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/split/process/${currentSplitState.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({
+                        mode: currentSplitState.mode,
+                        ranges: currentSplitState.ranges,
+                        pages: payloadPages,
+                    }),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-split').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to generate split PDF.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error processing split. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-split-another').addEventListener('click', () => {
+            currentSplitState = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, mode: 'ranges', ranges: [{ from: 1, to: 1 }], paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
 }
 
 new App();
+
+

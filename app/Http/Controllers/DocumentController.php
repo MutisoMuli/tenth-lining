@@ -67,6 +67,7 @@ class DocumentController extends Controller
             'file_size' => filesize($fullPath),
             'status' => 'pending',
             'payment_status' => 'unpaid',
+            'tool_type' => $request->input('tool_type', 'tenth-lining'),
         ]);
 
         // Return JSON for SPA requests, redirect for traditional form submits

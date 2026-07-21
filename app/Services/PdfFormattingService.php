@@ -154,23 +154,38 @@ class PdfFormattingService
                 $pdf->SetLineWidth($lineThickness);
                 $pdf->Line($lineStartX, $y, $lineEndX, $y);
 
-                // ── Draw badge rectangle ──
-                $badgeWidth = $fontSize * 0.6 + 4; // approximate width based on font size
-                $badgeHeight = $fontSize * 0.4 + 2;
-                $badgeX = $lineEndX;
-                $badgeY = $y - ($badgeHeight / 2);
+                $showBadge = $settings['show_badge'] ?? true;
 
-                $pdf->SetFillColor($color[0], $color[1], $color[2]);
-                $pdf->Rect($badgeX, $badgeY, $badgeWidth, $badgeHeight, 'F');
+                if ($showBadge) {
+                    // ── Draw badge rectangle ──
+                    $badgeWidth = $fontSize * 0.6 + 4; // approximate width based on font size
+                    $badgeHeight = $fontSize * 0.4 + 2;
+                    $badgeX = $lineEndX;
+                    $badgeY = $y - ($badgeHeight / 2);
 
-                // ── Draw line number text in white inside the badge ──
-                $pdf->SetFont($fontFamily, $style, $fontSize);
-                $pdf->SetTextColor(255, 255, 255);
-                $pdf->SetXY($badgeX, $badgeY);
-                $pdf->Cell($badgeWidth, $badgeHeight, (string) $lineNumber, 0, 0, 'C');
+                    $pdf->SetFillColor($color[0], $color[1], $color[2]);
+                    $pdf->Rect($badgeX, $badgeY, $badgeWidth, $badgeHeight, 'F');
 
-                // Reset text color for subsequent elements
-                $pdf->SetTextColor($color[0], $color[1], $color[2]);
+                    // ── Draw line number text in white inside the badge ──
+                    $pdf->SetFont($fontFamily, $style, $fontSize);
+                    $pdf->SetTextColor(255, 255, 255);
+                    $pdf->SetXY($badgeX, $badgeY);
+                    $pdf->Cell($badgeWidth, $badgeHeight, (string) $lineNumber, 0, 0, 'C');
+
+                    // Reset text color for subsequent elements
+                    $pdf->SetTextColor($color[0], $color[1], $color[2]);
+                } else {
+                    // ── Draw line number text without badge background ──
+                    $badgeWidth = $fontSize * 0.6 + 4;
+                    $badgeHeight = $fontSize * 0.4 + 2;
+                    $badgeX = $lineEndX;
+                    $badgeY = $y - ($badgeHeight / 2);
+
+                    $pdf->SetFont($fontFamily, $style, $fontSize);
+                    $pdf->SetTextColor($color[0], $color[1], $color[2]);
+                    $pdf->SetXY($badgeX, $badgeY);
+                    $pdf->Cell($badgeWidth, $badgeHeight, (string) $lineNumber, 0, 0, 'C');
+                }
             }
         }
     }

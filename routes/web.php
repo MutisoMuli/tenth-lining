@@ -22,6 +22,14 @@ Route::get('/api/documents/history', function () {
 // File upload (returns JSON with document ID)
 Route::post('/upload', [DocumentController::class, 'upload'])->name('document.upload');
 
+// Merge PDF Tool Routes
+Route::post('/api/tool/merge/upload', [\App\Http\Controllers\MergePdfController::class, 'upload'])->name('api.merge.upload');
+Route::post('/api/tool/merge/process/{id}', [\App\Http\Controllers\MergePdfController::class, 'process'])->name('api.merge.process');
+
+// Split PDF Tool Routes
+Route::post('/api/tool/split/upload', [\App\Http\Controllers\SplitPdfController::class, 'upload'])->name('api.split.upload');
+Route::post('/api/tool/split/process/{id}', [\App\Http\Controllers\SplitPdfController::class, 'process'])->name('api.split.process');
+
 // PDF preview (serves file)
 Route::get('/preview/{id}', [DocumentController::class, 'preview'])->name('document.preview');
 
@@ -47,7 +55,9 @@ Route::get('/api/document/{id}', function (string $id) {
         'page_number_settings' => $document->page_number_settings ?? [],
         'tenth_line_settings' => $document->tenth_line_settings ?? [],
         'preview_url' => route('document.preview', $document->id),
-        'cost' => $document->page_count * 3,
+        'tool_type' => $document->tool_type ?? 'tenth-lining',
+        'rate' => ($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1,
+        'cost' => $document->page_count * (($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1),
     ]);
 })->name('api.document');
 

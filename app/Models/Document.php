@@ -22,6 +22,7 @@ class Document extends Model
         'compressed_size',
         'status',
         'payment_status',
+        'tool_type',
         'page_number_settings',
         'tenth_line_settings',
     ];

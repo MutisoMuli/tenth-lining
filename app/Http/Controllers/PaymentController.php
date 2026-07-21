@@ -22,7 +22,7 @@ class PaymentController extends Controller
         ]);
 
         $document = Document::findOrFail($request->document_id);
-        $pricePerPage = 3; // KES 3 per page
+        $pricePerPage = ($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1;
         $amount = $document->page_count * $pricePerPage;
 
         $response = $mpesa->stkPush(
