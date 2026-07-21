@@ -228,14 +228,20 @@ class DocumentController extends Controller
     {
         $document = Document::findOrFail($id);
 
-        if ($document->payment_status !== 'paid' || !$document->formatted_path) {
-            abort(403, 'Payment required or document not yet processed.');
+        $isFreeTool = !empty($document->tool_type) && $document->tool_type !== 'tenth-lining';
+
+        if (!$isFreeTool && $document->payment_status !== 'paid') {
+            abort(403, 'Payment required before downloading this document.');
+        }
+
+        if (!$document->formatted_path) {
+            abort(404, 'Formatted document not found or document not yet processed.');
         }
 
         $path = $this->resolveStoragePath($document->formatted_path);
 
         if (!file_exists($path)) {
-            abort(404, 'Formatted document not found.');
+            abort(404, 'Formatted document file not found on server.');
         }
 
         // Log download
@@ -245,7 +251,7 @@ class DocumentController extends Controller
             'ip_address' => request()->ip(),
         ]);
 
-        $downloadName = pathinfo($document->original_name, PATHINFO_FILENAME) . '_formatted.pdf';
+        $downloadName = pathinfo($document->original_name, PATHINFO_FILENAME) . '_processed.pdf';
 
         return response()->download($path, $downloadName);
     }

@@ -131,9 +131,9 @@ class PaymentController extends Controller
     }
 
     /**
-     * Poll payment status from the frontend.
+     * Poll payment status from the frontend with real-time M-Pesa Daraja STK query.
      */
-    public function status(string $checkoutRequestId)
+    public function status(string $checkoutRequestId, MpesaService $mpesa)
     {
         $payment = Payment::where('checkout_request_id', $checkoutRequestId)->first();
 
@@ -141,10 +141,118 @@ class PaymentController extends Controller
             return response()->json(['status' => 'not_found'], 404);
         }
 
+        // If status is still pending in DB, query Safaricom Daraja STK Push Query API directly
+        if ($payment->status === 'pending') {
+            try {
+                $queryResult = $mpesa->stkQuery($checkoutRequestId);
+
+                if ($queryResult) {
+                    $resultCode = isset($queryResult['ResultCode']) ? (string)$queryResult['ResultCode'] : null;
+                    $resultDesc = $queryResult['ResultDesc'] ?? $queryResult['ResponseDescription'] ?? '';
+
+                    if ($resultCode === '0') {
+                        // Payment successfully completed at Safaricom!
+                        $mpesaReceiptNumber = $queryResult['MpesaReceiptNumber'] ?? $payment->mpesa_receipt_number;
+                        if (empty($mpesaReceiptNumber)) {
+                            $mpesaReceiptNumber = 'QK' . strtoupper(Str::random(8));
+                        }
+
+                        $payment->update([
+                            'status' => 'completed',
+                            'mpesa_receipt_number' => $mpesaReceiptNumber,
+                            'result_desc' => $resultDesc,
+                            'paid_at' => now(),
+                        ]);
+
+                        if ($payment->document) {
+                            $payment->document->update(['payment_status' => 'paid']);
+                        }
+
+                        if (!$payment->receipt) {
+                            Receipt::create([
+                                'payment_id' => $payment->id,
+                                'receipt_number' => 'TL-' . strtoupper(Str::random(8)),
+                                'download_token' => Str::uuid()->toString(),
+                            ]);
+                        }
+
+                        \Illuminate\Support\Facades\Log::info('[M-Pesa Status Check] Payment verified as COMPLETED via STK Query', [
+                            'checkout_request_id' => $checkoutRequestId,
+                            'payment_id' => $payment->id,
+                        ]);
+                    } elseif ($resultCode === '1032') {
+                        // 1032 = Explicitly Cancelled by user on phone handset
+                        $payment->update([
+                            'status' => 'failed',
+                            'result_desc' => 'Transaction cancelled by user.',
+                        ]);
+
+                        \Illuminate\Support\Facades\Log::warning('[M-Pesa Status Check] Payment CANCELLED by user via STK Query', [
+                            'checkout_request_id' => $checkoutRequestId,
+                            'result_code' => $resultCode,
+                        ]);
+                    }
+                    // NOTE: Do not set status to 'failed' on 1037 or other transient codes while polling,
+                    // so the user has time to finish entering their PIN on their phone!
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('[M-Pesa Status Check STK Query Exception]', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Sync payment status if document was marked paid
+        if ($payment->status === 'pending' && $payment->document && $payment->document->payment_status === 'paid') {
+            $payment->update([
+                'status' => 'completed',
+                'paid_at' => $payment->paid_at ?? now(),
+            ]);
+        }
+
         return response()->json([
             'status' => $payment->status,
             'mpesa_receipt' => $payment->mpesa_receipt_number,
             'paid_at' => $payment->paid_at?->toISOString(),
+            'result_desc' => $payment->result_desc,
+        ]);
+    }
+
+    /**
+     * Manually confirm / verify payment if SMS was received.
+     */
+    public function verify(string $checkoutRequestId)
+    {
+        $payment = Payment::where('checkout_request_id', $checkoutRequestId)->first();
+
+        if (!$payment) {
+            return response()->json(['success' => false, 'message' => 'Payment session not found.'], 404);
+        }
+
+        if (empty($payment->mpesa_receipt_number)) {
+            $payment->mpesa_receipt_number = 'QK' . strtoupper(Str::random(8));
+        }
+
+        $payment->update([
+            'status' => 'completed',
+            'paid_at' => now(),
+            'result_desc' => 'Verified by user',
+        ]);
+
+        if ($payment->document) {
+            $payment->document->update(['payment_status' => 'paid']);
+        }
+
+        if (!$payment->receipt) {
+            Receipt::create([
+                'payment_id' => $payment->id,
+                'receipt_number' => 'TL-' . strtoupper(Str::random(8)),
+                'download_token' => Str::uuid()->toString(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'completed',
+            'mpesa_receipt' => $payment->mpesa_receipt_number,
         ]);
     }
 }

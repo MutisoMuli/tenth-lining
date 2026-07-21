@@ -75,6 +75,7 @@ Route::post('/document/{id}/export', [DocumentController::class, 'export'])->nam
 
 // Document download (serves file)
 Route::get('/document/{id}/download', [DocumentController::class, 'download'])->name('document.download');
+Route::get('/api/documents/{id}/download', [DocumentController::class, 'download']);
 
 // Document metadata API (returns JSON for editor)
 Route::get('/api/document/{id}', function (string $id) {
@@ -117,6 +118,7 @@ Route::delete('/api/document/{id}', function (string $id) {
 // Payment routes
 Route::post('/payment/initiate', [PaymentController::class, 'initiate'])->name('payment.initiate');
 Route::get('/payment/status/{checkoutRequestId}', [PaymentController::class, 'status'])->name('payment.status');
+Route::post('/payment/verify/{checkoutRequestId}', [PaymentController::class, 'verify'])->name('payment.verify');
 
 // Tool APIs (Merge, Split, Compress, Convert, Organize)
 Route::post('/api/tool/merge/upload', [\App\Http\Controllers\MergePdfController::class, 'upload']);

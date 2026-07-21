@@ -126,12 +126,13 @@ class OptimizePdfController extends Controller
             $doc->formatted_path = $relativePath;
             $doc->compressed_size = filesize($outputPath);
             $doc->status = 'completed';
+            $doc->payment_status = 'paid';
             $doc->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Document optimized successfully.',
-                'download_url' => url('/api/documents/' . $doc->id . '/download'),
+                'download_url' => route('document.download', $doc->id),
             ]);
         } catch (\Throwable $e) {
             Log::error('OptimizePdfController process failed', ['error' => $e->getMessage()]);

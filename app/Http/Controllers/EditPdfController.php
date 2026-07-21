@@ -141,12 +141,13 @@ class EditPdfController extends Controller
 
             $doc->formatted_path = $relativePath;
             $doc->status = 'completed';
+            $doc->payment_status = 'paid';
             $doc->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Document edited successfully.',
-                'download_url' => url('/api/documents/' . $doc->id . '/download'),
+                'download_url' => route('document.download', $doc->id),
             ]);
         } catch (\Throwable $e) {
             Log::error('EditPdfController process failed', ['error' => $e->getMessage()]);

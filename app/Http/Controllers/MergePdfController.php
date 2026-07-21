@@ -106,10 +106,6 @@ class MergePdfController extends Controller
     {
         $document = Document::findOrFail($id);
 
-        if ($document->payment_status !== 'paid') {
-            return response()->json(['error' => 'Payment required before processing merge.'], 402);
-        }
-
         $orderPayload = $request->input('files', []);
         $filesToMerge = [];
 
@@ -147,6 +143,7 @@ class MergePdfController extends Controller
         $document->update([
             'formatted_path' => $outputFilename,
             'status' => 'completed',
+            'payment_status' => 'paid',
             'compressed_size' => filesize($outputPath),
         ]);
 

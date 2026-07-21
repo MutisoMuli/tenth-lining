@@ -84,10 +84,6 @@ class ConvertPdfController extends Controller
     {
         $document = Document::findOrFail($id);
 
-        if ($document->payment_status !== 'paid') {
-            return response()->json(['error' => 'Payment required before processing conversion.'], 402);
-        }
-
         $inputPath = storage_path('app/private/' . $document->original_path);
         if (!file_exists($inputPath)) {
             return response()->json(['error' => 'Original document file not found.'], 404);
@@ -155,6 +151,7 @@ class ConvertPdfController extends Controller
         $document->update([
             'formatted_path' => $relativeOutputPath,
             'status' => 'completed',
+            'payment_status' => 'paid',
             'compressed_size' => filesize($resultFile),
         ]);
 

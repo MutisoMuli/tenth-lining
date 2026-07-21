@@ -1334,7 +1334,10 @@ class App {
                             <div id="payment-step-waiting" class="hidden text-center py-6">
                                 <div class="w-12 h-12 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                 <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
-                                <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                                <p class="text-slate-500 text-xs mb-4">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                                <button id="btn-mpesa-verify-waiting" class="w-full py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl transition-colors border border-purple-200">
+                                    Already Paid? Click to Verify & Continue
+                                </button>
                             </div>
 
                             <!-- Success step -->
@@ -1355,8 +1358,13 @@ class App {
                                     <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </div>
                                 <p class="text-slate-800 font-bold text-base mb-1">STK Session Failed</p>
-                                <p id="payment-failed-msg" class="text-slate-500 text-xs mb-5"></p>
-                                <button id="btn-mpesa-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                                <p id="payment-failed-msg" class="text-slate-500 text-xs mb-4"></p>
+                                <div class="space-y-2">
+                                    <button id="btn-mpesa-verify-failed" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-colors shadow-md shadow-purple-500/20">
+                                        Already Paid M-Pesa? Verify & Download
+                                    </button>
+                                    <button id="btn-mpesa-retry" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry STK Push</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2240,6 +2248,7 @@ class App {
                 const result = await resp.json();
 
                 if (result.success && result.checkout_request_id) {
+                    activeCheckoutRequestId = result.checkout_request_id;
                     startPaymentPolling(result.checkout_request_id);
                 } else {
                     showPaymentFailed(result.message || 'Failed to initiate STK push.');
@@ -2249,9 +2258,37 @@ class App {
             }
         });
 
+        let activeCheckoutRequestId = null;
+
+        const verifyCurrentPayment = async () => {
+            if (!activeCheckoutRequestId) return;
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/verify/${activeCheckoutRequestId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken }
+                });
+                const result = await resp.json();
+                if (result.status === 'completed' || result.success) {
+                    if (paymentPollingInterval) clearInterval(paymentPollingInterval);
+                    document.getElementById('mpesa-receipt-code').textContent = result.mpesa_receipt || 'N/A';
+                    document.getElementById('payment-step-waiting').classList.add('hidden');
+                    document.getElementById('payment-step-failed').classList.add('hidden');
+                    document.getElementById('payment-step-success').classList.remove('hidden');
+                } else {
+                    alert(result.message || 'Verification failed. Please try again.');
+                }
+            } catch (e) {
+                alert('Verification error. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-mpesa-verify-waiting')?.addEventListener('click', verifyCurrentPayment);
+        document.getElementById('btn-mpesa-verify-failed')?.addEventListener('click', verifyCurrentPayment);
+
         const startPaymentPolling = (checkoutRequestId) => {
+            activeCheckoutRequestId = checkoutRequestId;
             let pollAttempts = 0;
-            const maxPollAttempts = 30; // 60 seconds total at 2s interval
+            const maxPollAttempts = 75; // 150 seconds total at 2s interval
 
             if (paymentPollingInterval) clearInterval(paymentPollingInterval);
 
@@ -2668,7 +2705,7 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Right: Order Summary & Payment Button -->
+                            <!-- Right: Order Summary -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Merge Summary</h4>
 
@@ -2682,19 +2719,14 @@ class App {
                                         <strong id="summary-page-count" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="summary-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
-                                <button id="btn-merge-pay" class="w-full py-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-red-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Merge PDF & Pay
+                                <button id="btn-merge-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Merge PDF & Download
                                 </button>
                             </div>
 
@@ -2720,8 +2752,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="merge-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="merge-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="merge-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -2943,82 +2975,9 @@ class App {
             });
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('merge-step-phone').classList.remove('hidden');
-            document.getElementById('merge-step-waiting').classList.add('hidden');
-            document.getElementById('merge-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('merge-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('merge-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('merge-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('merge-step-phone').classList.add('hidden');
-            document.getElementById('merge-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: currentMergeState.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startMergePaymentPolling(result.checkout_request_id);
-                } else {
-                    showMergePaymentFailed(result.message || 'Failed to initiate M-Pesa STK push.');
-                }
-            } catch (e) {
-                showMergePaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startMergePaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (currentMergeState.paymentPollingInterval) clearInterval(currentMergeState.paymentPollingInterval);
-
-            currentMergeState.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(currentMergeState.paymentPollingInterval);
-                        executeMergeProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(currentMergeState.paymentPollingInterval);
-                        showMergePaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(currentMergeState.paymentPollingInterval);
-                    showMergePaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showMergePaymentFailed = (msg) => {
-            document.getElementById('merge-step-waiting').classList.add('hidden');
-            document.getElementById('merge-step-failed').classList.remove('hidden');
-            document.getElementById('merge-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-merge-retry').addEventListener('click', () => {
-            document.getElementById('merge-step-failed').classList.add('hidden');
-            document.getElementById('merge-step-phone').classList.remove('hidden');
+            executeMergeProcess();
         });
 
         const executeMergeProcess = async () => {
@@ -3145,7 +3104,7 @@ class App {
 
                             </div>
 
-                            <!-- Right: Summary Card & Pay Button -->
+                            <!-- Right: Summary Card -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Split Summary</h4>
 
@@ -3159,19 +3118,14 @@ class App {
                                         <strong id="split-total-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="split-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-split-pay" class="w-full py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Split PDF & Pay
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Split PDF & Download
                                 </button>
                             </div>
 
@@ -3197,8 +3151,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="split-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="split-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="split-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -3434,82 +3388,9 @@ class App {
         // Helper max
         function max(a, b) { return a > b ? a : b; }
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('split-step-phone').classList.remove('hidden');
-            document.getElementById('split-step-waiting').classList.add('hidden');
-            document.getElementById('split-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('split-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('split-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('split-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('split-step-phone').classList.add('hidden');
-            document.getElementById('split-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: currentSplitState.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startSplitPaymentPolling(result.checkout_request_id);
-                } else {
-                    showSplitPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showSplitPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startSplitPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (currentSplitState.paymentPollingInterval) clearInterval(currentSplitState.paymentPollingInterval);
-
-            currentSplitState.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(currentSplitState.paymentPollingInterval);
-                        executeSplitProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(currentSplitState.paymentPollingInterval);
-                        showSplitPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(currentSplitState.paymentPollingInterval);
-                    showSplitPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showSplitPaymentFailed = (msg) => {
-            document.getElementById('split-step-waiting').classList.add('hidden');
-            document.getElementById('split-step-failed').classList.add('hidden');
-            document.getElementById('split-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-split-retry').addEventListener('click', () => {
-            document.getElementById('split-step-failed').classList.add('hidden');
-            document.getElementById('split-step-phone').classList.remove('hidden');
+            executeSplitProcess();
         });
 
         const executeSplitProcess = async () => {
@@ -3663,7 +3544,7 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Right: Summary Card & Pay Button -->
+                            <!-- Right: Summary Card -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Compression Summary</h4>
 
@@ -3681,19 +3562,14 @@ class App {
                                         <strong id="compress-total-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="compress-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-compress-pay" class="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Compress PDF & Pay
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Compress PDF & Download
                                 </button>
                             </div>
 
@@ -3724,8 +3600,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="compress-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="compress-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="compress-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -3876,82 +3752,9 @@ class App {
             if (elModalAmount) elModalAmount.textContent = `KES ${currentCompressState.totalCost}`;
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('compress-step-phone').classList.remove('hidden');
-            document.getElementById('compress-step-waiting').classList.add('hidden');
-            document.getElementById('compress-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('compress-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('compress-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('compress-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('compress-step-phone').classList.add('hidden');
-            document.getElementById('compress-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: currentCompressState.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startCompressPaymentPolling(result.checkout_request_id);
-                } else {
-                    showCompressPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showCompressPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startCompressPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (currentCompressState.paymentPollingInterval) clearInterval(currentCompressState.paymentPollingInterval);
-
-            currentCompressState.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(currentCompressState.paymentPollingInterval);
-                        executeCompressProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(currentCompressState.paymentPollingInterval);
-                        showCompressPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(currentCompressState.paymentPollingInterval);
-                    showCompressPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showCompressPaymentFailed = (msg) => {
-            document.getElementById('compress-step-waiting').classList.add('hidden');
-            document.getElementById('compress-step-failed').classList.remove('hidden');
-            document.getElementById('compress-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-compress-retry').addEventListener('click', () => {
-            document.getElementById('compress-step-failed').classList.add('hidden');
-            document.getElementById('compress-step-phone').classList.remove('hidden');
+            executeCompressProcess();
         });
 
         const executeCompressProcess = async () => {
@@ -4228,19 +4031,14 @@ class App {
                                         <strong id="convert-total-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-4 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="convert-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-convert-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Convert Document & Pay
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Convert Document & Download
                                 </button>
                             </div>
                         </div>
@@ -4265,8 +4063,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="convert-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="convert-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="convert-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -4415,82 +4213,9 @@ class App {
             if (elModalAmount) elModalAmount.textContent = `KES ${currentConvertState.totalCost}`;
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('convert-step-phone').classList.remove('hidden');
-            document.getElementById('convert-step-waiting').classList.add('hidden');
-            document.getElementById('convert-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('convert-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('convert-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('convert-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('convert-step-phone').classList.add('hidden');
-            document.getElementById('convert-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: currentConvertState.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startConvertPaymentPolling(result.checkout_request_id);
-                } else {
-                    showConvertPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showConvertPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startConvertPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (currentConvertState.paymentPollingInterval) clearInterval(currentConvertState.paymentPollingInterval);
-
-            currentConvertState.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(currentConvertState.paymentPollingInterval);
-                        executeConvertProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(currentConvertState.paymentPollingInterval);
-                        showConvertPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(currentConvertState.paymentPollingInterval);
-                    showConvertPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showConvertPaymentFailed = (msg) => {
-            document.getElementById('convert-step-waiting').classList.add('hidden');
-            document.getElementById('convert-step-failed').classList.remove('hidden');
-            document.getElementById('convert-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-convert-retry').addEventListener('click', () => {
-            document.getElementById('convert-step-failed').classList.add('hidden');
-            document.getElementById('convert-step-phone').classList.remove('hidden');
+            executeConvertProcess();
         });
 
         const executeConvertProcess = async () => {
@@ -4641,7 +4366,7 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Right: Order Summary & Pay -->
+                            <!-- Right: Order Summary -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
 
@@ -4651,19 +4376,14 @@ class App {
                                         <strong id="org-summary-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="org-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-org-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Process & Pay via M-Pesa
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Process & Download
                                 </button>
                             </div>
 
@@ -4689,8 +4409,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="org-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="org-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="org-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -4897,82 +4617,9 @@ class App {
             });
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('org-step-phone').classList.remove('hidden');
-            document.getElementById('org-step-waiting').classList.add('hidden');
-            document.getElementById('org-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('org-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('org-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('org-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('org-step-phone').classList.add('hidden');
-            document.getElementById('org-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startPaymentPolling(result.checkout_request_id);
-                } else {
-                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
-
-            state.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(state.paymentPollingInterval);
-                        executeProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(state.paymentPollingInterval);
-                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(state.paymentPollingInterval);
-                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showPaymentFailed = (msg) => {
-            document.getElementById('org-step-waiting').classList.add('hidden');
-            document.getElementById('org-step-failed').classList.remove('hidden');
-            document.getElementById('org-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-org-retry').addEventListener('click', () => {
-            document.getElementById('org-step-failed').classList.add('hidden');
-            document.getElementById('org-step-phone').classList.remove('hidden');
+            executeProcess();
         });
 
         const parsePageInput = (str) => {
@@ -5140,7 +4787,7 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Right: Order Summary & Pay -->
+                            <!-- Right: Order Summary -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
 
@@ -5150,19 +4797,14 @@ class App {
                                         <strong id="opt-summary-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="opt-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-opt-pay" class="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Process & Pay via M-Pesa
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Process & Download
                                 </button>
                             </div>
 
@@ -5188,8 +4830,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="opt-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="opt-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="opt-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -5332,82 +4974,9 @@ class App {
             if (elModalAmount) elModalAmount.textContent = `KES ${state.totalCost}`;
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('opt-step-phone').classList.remove('hidden');
-            document.getElementById('opt-step-waiting').classList.add('hidden');
-            document.getElementById('opt-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('opt-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('opt-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('opt-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('opt-step-phone').classList.add('hidden');
-            document.getElementById('opt-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startPaymentPolling(result.checkout_request_id);
-                } else {
-                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
-
-            state.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(state.paymentPollingInterval);
-                        executeProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(state.paymentPollingInterval);
-                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(state.paymentPollingInterval);
-                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showPaymentFailed = (msg) => {
-            document.getElementById('opt-step-waiting').classList.add('hidden');
-            document.getElementById('opt-step-failed').classList.remove('hidden');
-            document.getElementById('opt-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-opt-retry').addEventListener('click', () => {
-            document.getElementById('opt-step-failed').classList.add('hidden');
-            document.getElementById('opt-step-phone').classList.remove('hidden');
+            executeProcess();
         });
 
         const executeProcess = async () => {
@@ -5674,7 +5243,7 @@ class App {
                                 </div>
                             </div>
 
-                            <!-- Right: Order Summary & Pay -->
+                            <!-- Right: Order Summary -->
                             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
                                 <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
 
@@ -5684,19 +5253,14 @@ class App {
                                         <strong id="edit-summary-pages" class="text-slate-900">0 pages</strong>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span>Price Rate</span>
-                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                        <span>Price</span>
+                                        <strong class="text-emerald-600">FREE</strong>
                                     </div>
                                 </div>
 
-                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
-                                    <span id="edit-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
-                                </div>
-
                                 <button id="btn-edit-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Process & Pay via M-Pesa
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Process & Download
                                 </button>
                             </div>
 
@@ -5722,8 +5286,8 @@ class App {
                 </div>
             </main>
 
-            <!-- PAYMENT MODAL -->
-            <div id="edit-payment-modal" class="fixed inset-0 z-50 hidden">
+            <!-- PAYMENT MODAL (removed - free tool) -->
+            <div id="edit-payment-modal" class="fixed inset-0 z-50 hidden" style="display:none!important">
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="edit-modal-backdrop"></div>
                 <div class="absolute inset-0 flex items-center justify-center p-4">
                     <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
@@ -6022,82 +5586,9 @@ class App {
             }
         };
 
-        // Payment logic
+        // Free tool - directly process on click
         btnPay.addEventListener('click', () => {
-            document.getElementById('edit-step-phone').classList.remove('hidden');
-            document.getElementById('edit-step-waiting').classList.add('hidden');
-            document.getElementById('edit-step-failed').classList.add('hidden');
-            paymentModal.classList.remove('hidden');
-        });
-
-        document.getElementById('edit-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
-        document.getElementById('edit-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
-
-        btnStkSubmit.addEventListener('click', async () => {
-            const phone = document.getElementById('edit-phone-input').value.trim();
-            if (!phone || phone.length < 10) {
-                alert('Please enter a valid M-Pesa phone number.');
-                return;
-            }
-
-            document.getElementById('edit-step-phone').classList.add('hidden');
-            document.getElementById('edit-step-waiting').classList.remove('hidden');
-
-            try {
-                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
-                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
-                });
-                const result = await resp.json();
-
-                if (result.success && result.checkout_request_id) {
-                    startPaymentPolling(result.checkout_request_id);
-                } else {
-                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
-                }
-            } catch (e) {
-                showPaymentFailed('Network connection error. Please try again.');
-            }
-        });
-
-        const startPaymentPolling = (checkoutRequestId) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-
-            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
-
-            state.paymentPollingInterval = setInterval(async () => {
-                pollAttempts++;
-                try {
-                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
-                    const result = await resp.json();
-
-                    if (result.status === 'completed') {
-                        clearInterval(state.paymentPollingInterval);
-                        executeProcess();
-                    } else if (result.status === 'failed') {
-                        clearInterval(state.paymentPollingInterval);
-                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
-                    }
-                } catch (e) {}
-
-                if (pollAttempts >= maxPollAttempts) {
-                    clearInterval(state.paymentPollingInterval);
-                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
-                }
-            }, 2000);
-        };
-
-        const showPaymentFailed = (msg) => {
-            document.getElementById('edit-step-waiting').classList.add('hidden');
-            document.getElementById('edit-step-failed').classList.remove('hidden');
-            document.getElementById('edit-failed-msg').textContent = msg;
-        };
-
-        document.getElementById('btn-edit-retry').addEventListener('click', () => {
-            document.getElementById('edit-step-failed').classList.add('hidden');
-            document.getElementById('edit-step-phone').classList.remove('hidden');
+            executeProcess();
         });
 
         const executeProcess = async () => {
