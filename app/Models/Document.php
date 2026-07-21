@@ -14,6 +14,7 @@ class Document extends Model
 
     protected $fillable = [
         'user_id',
+        'session_id',
         'original_name',
         'original_path',
         'formatted_path',
@@ -36,6 +37,12 @@ class Document extends Model
     {
         if (isset($attributes['tool_type']) && !\Illuminate\Support\Facades\Schema::hasColumn('documents', 'tool_type')) {
             unset($attributes['tool_type']);
+        }
+        if (empty($attributes['user_id']) && auth()->check()) {
+            $attributes['user_id'] = auth()->id();
+        }
+        if (empty($attributes['session_id'])) {
+            $attributes['session_id'] = session()->getId();
         }
         return static::create($attributes);
     }

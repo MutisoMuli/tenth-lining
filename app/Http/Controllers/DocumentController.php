@@ -8,10 +8,32 @@ use App\Services\PdfFormattingService;
 use App\Services\WordToPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DocumentController extends Controller
 {
+    /**
+     * Resolve the absolute filesystem path for a relative document path, checking all common storage locations.
+     */
+    private function resolveStoragePath(string $relativePath): string
+    {
+        $candidates = [
+            storage_path('app/' . $relativePath),
+            storage_path('app/private/' . $relativePath),
+            storage_path($relativePath),
+            Storage::disk('local')->path($relativePath),
+        ];
+
+        foreach ($candidates as $cand) {
+            if (file_exists($cand) && is_file($cand)) {
+                return $cand;
+            }
+        }
+
+        return storage_path('app/' . $relativePath);
+    }
+
     /**
      * Show the landing page.
      */
@@ -35,14 +57,18 @@ class DocumentController extends Controller
 
         // Store the uploaded file
         $storedPath = $file->store('documents/originals', 'local');
-        $fullPath = storage_path('app/private/' . $storedPath);
+        $fullPath = $this->resolveStoragePath($storedPath);
 
         // Convert Word to PDF if needed
         if (in_array($extension, ['doc', 'docx'])) {
             $converter = new WordToPdfService();
-            $pdfPath = $converter->convert($fullPath, storage_path('app/private/documents/originals'));
+            $targetDir = dirname($fullPath);
+            $pdfPath = $converter->convert($fullPath, $targetDir);
 
             if (!$pdfPath) {
+                if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json(['error' => 'Failed to convert Word document to PDF.'], 422);
+                }
                 return back()->withErrors(['file' => 'Failed to convert Word document to PDF. Please upload a PDF file directly.']);
             }
 
@@ -55,6 +81,9 @@ class DocumentController extends Controller
         $pageCount = $formatter->getPageCount($fullPath);
 
         if ($pageCount === 0) {
+            if ($request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json(['error' => 'Unable to read the PDF. The file may be corrupted.'], 422);
+            }
             return back()->withErrors(['file' => 'Unable to read the PDF. The file may be corrupted.']);
         }
 
@@ -82,7 +111,6 @@ class DocumentController extends Controller
         }
 
         return redirect()->route('spa', ['any' => 'editor/' . $document->id]);
-
     }
 
     /**
@@ -100,15 +128,16 @@ class DocumentController extends Controller
     public function preview(string $id)
     {
         $document = Document::findOrFail($id);
-        $path = storage_path('app/private/' . $document->original_path);
+        $path = $this->resolveStoragePath($document->original_path);
 
         if (!file_exists($path)) {
-            abort(404, 'Document not found.');
+            Log::error('Preview file not found', ['id' => $id, 'path' => $document->original_path]);
+            abort(404, 'Document not found on server.');
         }
 
         return response()->file($path, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="preview.pdf"',
+            'Content-Disposition' => 'inline; filename="' . basename($document->original_name) . '"',
         ]);
     }
 
@@ -119,16 +148,24 @@ class DocumentController extends Controller
     {
         $document = Document::findOrFail($id);
 
-        $document->update([
-            'page_number_settings' => $request->input('page_number_settings'),
-            'tenth_line_settings' => $request->input('tenth_line_settings'),
+        $request->validate([
+            'page_number_settings' => 'nullable|array',
+            'tenth_line_settings'  => 'nullable|array',
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Settings saved.']);
+        $document->update([
+            'page_number_settings' => $request->input('page_number_settings', $document->page_number_settings),
+            'tenth_line_settings'  => $request->input('tenth_line_settings', $document->tenth_line_settings),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Settings saved successfully.',
+        ]);
     }
 
     /**
-     * Export the formatted PDF (after payment verification).
+     * Export / format the document after payment.
      */
     public function export(Request $request, string $id)
     {
@@ -138,11 +175,11 @@ class DocumentController extends Controller
             return response()->json(['error' => 'Payment required before download.'], 402);
         }
 
-        // Use settings from the request (current editor state) with DB fallback
+        // Use settings from the request with DB fallback
         $pageNumberSettings = $request->input('page_number_settings', $document->page_number_settings ?? []);
         $tenthLineSettings = $request->input('tenth_line_settings', $document->tenth_line_settings ?? []);
 
-        // Persist settings so re-downloads from history also use them
+        // Persist settings
         $document->update([
             'page_number_settings' => $pageNumberSettings,
             'tenth_line_settings' => $tenthLineSettings,
@@ -150,11 +187,10 @@ class DocumentController extends Controller
 
         // Generate formatted PDF
         $formatter = new PdfFormattingService();
-        $inputPath = storage_path('app/private/' . $document->original_path);
+        $inputPath = $this->resolveStoragePath($document->original_path);
         $outputFilename = 'documents/formatted/' . Str::uuid() . '.pdf';
-        $outputPath = storage_path('app/private/' . $outputFilename);
+        $outputPath = storage_path('app/' . $outputFilename);
 
-        // Ensure output directory exists
         if (!is_dir(dirname($outputPath))) {
             mkdir(dirname($outputPath), 0755, true);
         }
@@ -196,7 +232,7 @@ class DocumentController extends Controller
             abort(403, 'Payment required or document not yet processed.');
         }
 
-        $path = storage_path('app/private/' . $document->formatted_path);
+        $path = $this->resolveStoragePath($document->formatted_path);
 
         if (!file_exists($path)) {
             abort(404, 'Formatted document not found.');

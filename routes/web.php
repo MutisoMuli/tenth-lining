@@ -13,9 +13,23 @@ Route::get('/api/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 })->name('api.csrf');
 
-// Document history API (returns recent documents)
+// Document history API (returns user / session specific documents)
 Route::get('/api/documents/history', function () {
-    $documents = Document::latest()->limit(50)->get(['id', 'original_name', 'page_count', 'file_size', 'status', 'payment_status', 'created_at']);
+    $query = Document::query();
+
+    if (auth()->check()) {
+        $query->where('user_id', auth()->id());
+    } else {
+        $sessionId = session()->getId();
+        $query->where(function ($q) use ($sessionId) {
+            $q->where('session_id', $sessionId);
+        });
+    }
+
+    $documents = $query->latest()
+        ->limit(100)
+        ->get(['id', 'original_name', 'page_count', 'file_size', 'status', 'payment_status', 'created_at']);
+
     return response()->json(['documents' => $documents]);
 })->name('api.documents.history');
 
@@ -34,9 +48,21 @@ Route::post('/api/tool/split/process/{id}', [\App\Http\Controllers\SplitPdfContr
 Route::post('/api/tool/compress/upload', [\App\Http\Controllers\CompressPdfController::class, 'upload'])->name('api.compress.upload');
 Route::post('/api/tool/compress/process/{id}', [\App\Http\Controllers\CompressPdfController::class, 'process'])->name('api.compress.process');
 
+// Optimize PDF Tool Routes (Repair PDF, OCR PDF)
+Route::post('/api/tool/optimize/upload', [\App\Http\Controllers\OptimizePdfController::class, 'upload'])->name('api.optimize.upload');
+Route::post('/api/tool/optimize/process/{id}', [\App\Http\Controllers\OptimizePdfController::class, 'process'])->name('api.optimize.process');
+Route::post('/api/tool/repair/upload', [\App\Http\Controllers\OptimizePdfController::class, 'upload']);
+Route::post('/api/tool/repair/process/{id}', [\App\Http\Controllers\OptimizePdfController::class, 'process']);
+Route::post('/api/tool/ocr/upload', [\App\Http\Controllers\OptimizePdfController::class, 'upload']);
+Route::post('/api/tool/ocr/process/{id}', [\App\Http\Controllers\OptimizePdfController::class, 'process']);
+
 // Convert PDF Tool Routes
 Route::post('/api/tool/convert/upload', [\App\Http\Controllers\ConvertPdfController::class, 'upload'])->name('api.convert.upload');
 Route::post('/api/tool/convert/process/{id}', [\App\Http\Controllers\ConvertPdfController::class, 'process'])->name('api.convert.process');
+
+// Edit PDF Tool Routes (Rotate PDF, Add page numbers, Add watermark, Crop PDF, Edit PDF, PDF Forms)
+Route::post('/api/tool/edit/upload', [\App\Http\Controllers\EditPdfController::class, 'upload'])->name('api.edit.upload');
+Route::post('/api/tool/edit/process/{id}', [\App\Http\Controllers\EditPdfController::class, 'process'])->name('api.edit.process');
 
 // PDF preview (serves file)
 Route::get('/preview/{id}', [DocumentController::class, 'preview'])->name('document.preview');

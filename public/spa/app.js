@@ -105,6 +105,22 @@ class LocalDocumentStore {
             return false;
         }
     }
+
+    async clearAll() {
+        try {
+            const db = await this._openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([this.storeName], 'readwrite');
+                const store = transaction.objectStore(this.storeName);
+                const req = store.clear();
+                req.onsuccess = () => resolve(true);
+                req.onerror = () => reject(req.error);
+            });
+        } catch (e) {
+            console.error('IndexedDB clearAll error:', e);
+            return false;
+        }
+    }
 }
 const localStore = new LocalDocumentStore();
 
@@ -155,6 +171,20 @@ class App {
 
         if (hash === '#/tool/compress-pdf') {
             this.renderCompressPdfTool();
+            return;
+        }
+
+        if (hash === '#/tool/repair-pdf' || hash === '#/tool/ocr-pdf') {
+            const toolType = hash.replace('#/tool/', '').split('?')[0];
+            this.renderOptimizeTool(toolType);
+            return;
+        }
+
+        if (hash === '#/tool/rotate-pdf' || hash === '#/tool/add-page-numbers' ||
+            hash === '#/tool/add-watermark' || hash === '#/tool/crop-pdf' ||
+            hash === '#/tool/edit-pdf' || hash === '#/tool/pdf-forms') {
+            const toolType = hash.replace('#/tool/', '').split('?')[0];
+            this.renderEditTool(toolType);
             return;
         }
 
@@ -596,15 +626,15 @@ class App {
         if (!fileInput) return;
 
         // Smooth scroll bindings
-        document.getElementById('nav-features-link').addEventListener('click', (e) => {
+        document.getElementById('nav-features-link')?.addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' });
         });
-        document.getElementById('nav-pricing-link').addEventListener('click', (e) => {
+        document.getElementById('nav-pricing-link')?.addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' });
         });
-        document.getElementById('nav-how-link').addEventListener('click', (e) => {
+        document.getElementById('nav-how-link')?.addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('how-it-works-section')?.scrollIntoView({ behavior: 'smooth' });
         });
@@ -941,13 +971,12 @@ class App {
                     if (!resp.ok) throw new Error('API server returned error status.');
                     return resp.json();
                 })
-                .then(data => {
+                .then(async data => {
                     const docs = data.documents || [];
-                    // Update IndexedDB cache
-                    Promise.all(docs.map(doc => localStore.saveDocument(doc))).then(() => {
-                        // Re-render dashboard using fresh API values
-                        renderDocsList(docs, false);
-                    });
+                    // Sync IndexedDB cache with current user's document set
+                    await localStore.clearAll();
+                    await Promise.all(docs.map(doc => localStore.saveDocument(doc)));
+                    renderDocsList(docs, false);
                 })
                 .catch(e => {
                     console.warn('Failed to sync history from API, showing local cache:', e);
@@ -5008,6 +5037,1116 @@ class App {
 
         document.getElementById('btn-org-another').addEventListener('click', () => {
             state = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, pageOperations: [], paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
+
+    // ─── VIEW 9: OPTIMIZE PDF SUITE (Repair PDF, OCR PDF) ─────────────────
+    renderOptimizeTool(toolType = 'repair-pdf') {
+        const toolsMap = {
+            'repair-pdf': {
+                title: 'Repair PDF',
+                desc: 'Fix corrupted, damaged, or unreadable PDF documents.',
+                endpoint: 'repair',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select corrupted PDF file',
+                icon: '🛠️'
+            },
+            'ocr-pdf': {
+                title: 'OCR PDF',
+                desc: 'Recognize text in scanned PDFs and make documents searchable.',
+                endpoint: 'ocr',
+                accept: '.pdf,.jpg,.jpeg,.png',
+                label: 'Select scanned PDF file',
+                icon: '🔍'
+            }
+        };
+
+        const activeTool = toolsMap[toolType] || toolsMap['repair-pdf'];
+
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml(toolType)}
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <a href="#/tool/all-pdf-tools" class="inline-flex items-center gap-1.5 text-xs text-green-600 font-bold hover:underline mb-4">
+                            ← Back to all PDF tools
+                        </a>
+                        <div class="w-16 h-16 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-4 border border-green-100 shadow-sm text-2xl">
+                            ${activeTool.icon}
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="opt-upload-zone" class="max-w-xl mx-auto">
+                        <label id="opt-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-green-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-green-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-green-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-green-600">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">${activeTool.label}</p>
+                                        <p class="text-slate-500 text-sm">or drop file here · Up to 100MB</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="opt-file-input" class="hidden" accept="${activeTool.accept}">
+                            </div>
+                        </label>
+
+                        <!-- Upload loading indicator -->
+                        <div id="opt-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Analyzing document structure...</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Configure Zone -->
+                    <div id="opt-config-zone" class="hidden max-w-2xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left Details Panel -->
+                            <div class="md:col-span-2 space-y-4">
+                                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <h3 id="opt-filename" class="font-bold text-slate-800 text-sm truncate">Document.pdf</h3>
+                                        <span id="opt-total-pages" class="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-lg flex-shrink-0">0 pages</span>
+                                    </div>
+
+                                    ${toolType === 'ocr-pdf' ? `
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">OCR Document Language:</label>
+                                            <select id="opt-ocr-lang" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold focus:border-green-500 focus:outline-none">
+                                                <option value="eng">English</option>
+                                                <option value="swa">Swahili</option>
+                                                <option value="fra">French</option>
+                                                <option value="spa">Spanish</option>
+                                                <option value="deu">German</option>
+                                            </select>
+                                        </div>
+                                    ` : `
+                                        <div class="bg-green-50/50 border border-green-100 rounded-xl p-4 text-xs text-green-900 space-y-1">
+                                            <strong class="font-bold block">✓ Structural Analysis Complete</strong>
+                                            <p class="text-slate-600">Rebuilding cross-reference tables, standardizing stream objects, and repairing corrupted font maps.</p>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <!-- Right: Order Summary & Pay -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="opt-summary-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="opt-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-opt-pay" class="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Process & Pay via M-Pesa
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="opt-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Optimization Complete!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your optimized PDF document has been successfully processed and is ready for download.</p>
+                        
+                        <a id="btn-download-opt" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download Optimized PDF
+                        </a>
+
+                        <button id="btn-opt-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Process Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="opt-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="opt-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="opt-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-700/10 flex items-center justify-center mx-auto mb-3 text-green-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">${activeTool.title} · <span id="opt-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="opt-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="opt-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-green-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-opt-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-green-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="opt-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="opt-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="opt-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-opt-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Controller State
+        let state = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            totalCost: 0,
+            paymentPollingInterval: null
+        };
+
+        const fileInput = document.getElementById('opt-file-input');
+        const uploadZone = document.getElementById('opt-upload-zone');
+        const uploadLoading = document.getElementById('opt-upload-loading');
+        const configZone = document.getElementById('opt-config-zone');
+        const successZone = document.getElementById('opt-success-zone');
+
+        const paymentModal = document.getElementById('opt-payment-modal');
+        const btnPay = document.getElementById('btn-opt-pay');
+        const btnStkSubmit = document.getElementById('btn-opt-stk-submit');
+
+        const handleFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('tool_type', toolType);
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/optimize/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    state.documentId = result.document_id;
+                    state.originalName = result.original_name;
+                    state.totalPages = result.page_count;
+                    state.totalCost = result.cost;
+
+                    renderConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload document.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+
+        const dropArea = document.getElementById('opt-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-green-500', 'bg-green-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-green-500', 'bg-green-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        const renderConfigState = () => {
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
+
+            const elFilename = document.getElementById('opt-filename');
+            if (elFilename) elFilename.textContent = state.originalName;
+
+            const elTotalPages = document.getElementById('opt-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${state.totalPages} pages`;
+
+            const elSummaryPages = document.getElementById('opt-summary-pages');
+            if (elSummaryPages) elSummaryPages.textContent = `${state.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('opt-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${state.totalCost}`;
+
+            const elModalAmount = document.getElementById('opt-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${state.totalCost}`;
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('opt-step-phone').classList.remove('hidden');
+            document.getElementById('opt-step-waiting').classList.add('hidden');
+            document.getElementById('opt-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('opt-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('opt-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('opt-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('opt-step-phone').classList.add('hidden');
+            document.getElementById('opt-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startPaymentPolling(result.checkout_request_id);
+                } else {
+                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
+
+            state.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(state.paymentPollingInterval);
+                        executeProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(state.paymentPollingInterval);
+                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(state.paymentPollingInterval);
+                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showPaymentFailed = (msg) => {
+            document.getElementById('opt-step-waiting').classList.add('hidden');
+            document.getElementById('opt-step-failed').classList.remove('hidden');
+            document.getElementById('opt-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-opt-retry').addEventListener('click', () => {
+            document.getElementById('opt-step-failed').classList.add('hidden');
+            document.getElementById('opt-step-phone').classList.remove('hidden');
+        });
+
+        const executeProcess = async () => {
+            try {
+                let bodyData = {};
+                if (toolType === 'ocr-pdf') {
+                    bodyData.language = document.getElementById('opt-ocr-lang')?.value || 'eng';
+                }
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/optimize/process/${state.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify(bodyData),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-opt').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to process document optimization.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error optimizing document. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-opt-another').addEventListener('click', () => {
+            state = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
+
+    // ─── VIEW 10: EDIT PDF SUITE (Rotate, Page Numbers, Watermark, Crop, Edit, Forms) ───
+    renderEditTool(toolType = 'rotate-pdf') {
+        const toolsMap = {
+            'rotate-pdf': {
+                title: 'Rotate PDF',
+                desc: 'Rotate PDF pages 90, 180, or 270 degrees clockwise.',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select PDF file to rotate',
+                icon: '🔄'
+            },
+            'add-page-numbers': {
+                title: 'Add Page Numbers',
+                desc: 'Add page numbers to your PDF with custom position and font styling.',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select PDF file',
+                icon: '🔢'
+            },
+            'add-watermark': {
+                title: 'Add Watermark',
+                desc: 'Stamp text watermarks (e.g. CONFIDENTIAL) on every page of your PDF.',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select PDF file',
+                icon: '💧'
+            },
+            'crop-pdf': {
+                title: 'Crop PDF',
+                desc: 'Trim page margins and adjust bounding box of your PDF file.',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select PDF file to crop',
+                icon: '✂️'
+            },
+            'edit-pdf': {
+                title: 'Edit PDF',
+                desc: 'Add text annotations, comments, and overlays directly on PDF pages.',
+                accept: '.pdf,.doc,.docx',
+                label: 'Select PDF file to edit',
+                icon: '✏️'
+            },
+            'pdf-forms': {
+                title: 'PDF Forms',
+                desc: 'Fill interactive PDF forms and sign digital form fields.',
+                accept: '.pdf',
+                label: 'Select PDF form file',
+                icon: '📝'
+            }
+        };
+
+        const activeTool = toolsMap[toolType] || toolsMap['rotate-pdf'];
+
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml(toolType)}
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <a href="#/tool/all-pdf-tools" class="inline-flex items-center gap-1.5 text-xs text-purple-600 font-bold hover:underline mb-4">
+                            ← Back to all PDF tools
+                        </a>
+                        <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-4 border border-purple-100 shadow-sm text-2xl">
+                            ${activeTool.icon}
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="edit-upload-zone" class="max-w-xl mx-auto">
+                        <label id="edit-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-purple-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-purple-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-purple-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-purple-600">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">${activeTool.label}</p>
+                                        <p class="text-slate-500 text-sm">or drop file here · Up to 100MB</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="edit-file-input" class="hidden" accept="${activeTool.accept}">
+                            </div>
+                        </label>
+
+                        <!-- Upload loading indicator -->
+                        <div id="edit-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Preparing document for editing...</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Configure Zone -->
+                    <div id="edit-config-zone" class="hidden max-w-2xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left Controls & Live Preview Panel -->
+                            <div class="md:col-span-2 space-y-4">
+                                
+                                <!-- Live Document Preview Window -->
+                                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+                                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Live Document Preview</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                                            <button id="btn-edit-prev-page" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-bold disabled:opacity-30">←</button>
+                                            <span id="edit-page-indicator">Page 1 of 1</span>
+                                            <button id="btn-edit-next-page" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-bold disabled:opacity-30">→</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Canvas & Live Overlays Container -->
+                                    <div class="relative min-h-[320px] max-h-[500px] overflow-hidden bg-slate-100/70 border border-slate-200 rounded-xl flex items-center justify-center p-4">
+                                        <!-- Loading spinner for preview -->
+                                        <div id="edit-preview-loading" class="flex flex-col items-center gap-2 text-slate-400">
+                                            <div class="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                                            <span class="text-xs font-semibold">Loading live preview...</span>
+                                        </div>
+
+                                        <div id="edit-preview-wrapper" class="relative max-w-full hidden transition-transform duration-300">
+                                            <canvas id="edit-preview-canvas" class="rounded shadow-md max-w-full max-h-[440px] block border border-slate-200 bg-white"></canvas>
+
+                                            <!-- Live Overlay Layer -->
+                                            <div id="edit-preview-overlay" class="absolute inset-0 pointer-events-none overflow-hidden rounded">
+                                                <!-- Dynamic live overlays generated via JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tool Options Panel -->
+                                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <h3 id="edit-filename" class="font-bold text-slate-800 text-sm truncate">Document.pdf</h3>
+                                        <span id="edit-total-pages" class="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg flex-shrink-0">0 pages</span>
+                                    </div>
+
+                                    ${toolType === 'rotate-pdf' ? `
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Rotation Angle:</label>
+                                            <div class="grid grid-cols-3 gap-3">
+                                                <button data-angle="90" class="btn-rotate-opt py-3 px-4 bg-purple-50 border-2 border-purple-600 text-purple-700 font-bold text-xs rounded-xl hover:bg-purple-100 transition-all text-center">90° Right</button>
+                                                <button data-angle="180" class="btn-rotate-opt py-3 px-4 bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-100 transition-all text-center">180° Flip</button>
+                                                <button data-angle="270" class="btn-rotate-opt py-3 px-4 bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-100 transition-all text-center">90° Left</button>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${toolType === 'add-watermark' ? `
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Watermark Text:</label>
+                                                <input type="text" id="edit-watermark-text" value="CONFIDENTIAL" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold focus:border-purple-500 focus:outline-none">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rotation Angle:</label>
+                                                    <select id="edit-watermark-rotation" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
+                                                        <option value="45" selected>45° Diagonal</option>
+                                                        <option value="0">0° Horizontal</option>
+                                                        <option value="90">90° Vertical</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Opacity:</label>
+                                                    <select id="edit-watermark-opacity" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
+                                                        <option value="0.3" selected>30% Faded</option>
+                                                        <option value="0.5">50% Medium</option>
+                                                        <option value="0.8">80% Dark</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${toolType === 'add-page-numbers' ? `
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Position on Page:</label>
+                                                <select id="edit-pn-position" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold">
+                                                    <option value="bottom-center" selected>Bottom Center</option>
+                                                    <option value="top-right">Top Right</option>
+                                                    <option value="bottom-right">Bottom Right</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Starting Page Number:</label>
+                                                <input type="number" id="edit-pn-start" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold">
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${toolType === 'crop-pdf' ? `
+                                        <div class="space-y-3">
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Crop Margins (mm):</label>
+                                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                                <div>
+                                                    <label class="text-slate-500 font-semibold block mb-1">Top Margin:</label>
+                                                    <input type="number" id="edit-crop-top" value="10" min="0" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold">
+                                                </div>
+                                                <div>
+                                                    <label class="text-slate-500 font-semibold block mb-1">Bottom Margin:</label>
+                                                    <input type="number" id="edit-crop-bottom" value="10" min="0" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold">
+                                                </div>
+                                                <div>
+                                                    <label class="text-slate-500 font-semibold block mb-1">Left Margin:</label>
+                                                    <input type="number" id="edit-crop-left" value="10" min="0" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold">
+                                                </div>
+                                                <div>
+                                                    <label class="text-slate-500 font-semibold block mb-1">Right Margin:</label>
+                                                    <input type="number" id="edit-crop-right" value="10" min="0" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${(toolType === 'edit-pdf' || toolType === 'pdf-forms') ? `
+                                        <div class="space-y-3">
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Add Text Annotation / Note:</label>
+                                            <input type="text" id="edit-annotation-text" placeholder="Type text to overlay on document..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold focus:border-purple-500 focus:outline-none">
+                                        </div>
+                                    ` : ''}
+
+                                </div>
+                            </div>
+
+                            <!-- Right: Order Summary & Pay -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="edit-summary-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="edit-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-edit-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Process & Pay via M-Pesa
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="edit-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Document Edited!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your edited PDF document has been successfully generated and is ready for download.</p>
+                        
+                        <a id="btn-download-edit" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download Edited PDF
+                        </a>
+
+                        <button id="btn-edit-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Process Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="edit-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="edit-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="edit-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-700/10 flex items-center justify-center mx-auto mb-3 text-purple-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">${activeTool.title} · <span id="edit-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="edit-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="edit-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-purple-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-edit-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-purple-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="edit-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="edit-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="edit-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-edit-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Controller State
+        let state = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            totalCost: 0,
+            selectedRotation: 90,
+            paymentPollingInterval: null
+        };
+
+        const fileInput = document.getElementById('edit-file-input');
+        const uploadZone = document.getElementById('edit-upload-zone');
+        const uploadLoading = document.getElementById('edit-upload-loading');
+        const configZone = document.getElementById('edit-config-zone');
+        const successZone = document.getElementById('edit-success-zone');
+
+        const paymentModal = document.getElementById('edit-payment-modal');
+        const btnPay = document.getElementById('btn-edit-pay');
+        const btnStkSubmit = document.getElementById('btn-edit-stk-submit');
+
+        const handleFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('tool_type', toolType);
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/edit/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    state.documentId = result.document_id;
+                    state.originalName = result.original_name;
+                    state.totalPages = result.page_count;
+                    state.totalCost = result.cost;
+
+                    renderConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload document.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+
+        const dropArea = document.getElementById('edit-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        let previewPdfDoc = null;
+        let previewCurrentPage = 1;
+
+        const renderConfigState = async () => {
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
+
+            const elFilename = document.getElementById('edit-filename');
+            if (elFilename) elFilename.textContent = state.originalName;
+
+            const elTotalPages = document.getElementById('edit-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${state.totalPages} pages`;
+
+            const elSummaryPages = document.getElementById('edit-summary-pages');
+            if (elSummaryPages) elSummaryPages.textContent = `${state.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('edit-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${state.totalCost}`;
+
+            const elModalAmount = document.getElementById('edit-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${state.totalCost}`;
+
+            // Rotation button toggles
+            document.querySelectorAll('.btn-rotate-opt').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.btn-rotate-opt').forEach(b => {
+                        b.classList.remove('border-2', 'border-purple-600', 'bg-purple-50', 'text-purple-700');
+                        b.classList.add('border', 'border-slate-200', 'bg-slate-50', 'text-slate-700');
+                    });
+                    e.currentTarget.classList.add('border-2', 'border-purple-600', 'bg-purple-50', 'text-purple-700');
+                    state.selectedRotation = parseInt(e.currentTarget.dataset.angle);
+                    updateLiveOverlay();
+                });
+            });
+
+            // Live Input Listeners for Watermark, Page Numbers, Crop, Annotations
+            ['edit-watermark-text', 'edit-watermark-rotation', 'edit-watermark-opacity',
+             'edit-pn-position', 'edit-pn-start', 'edit-crop-top', 'edit-crop-bottom',
+             'edit-crop-left', 'edit-crop-right', 'edit-annotation-text'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', () => updateLiveOverlay());
+                    el.addEventListener('change', () => updateLiveOverlay());
+                }
+            });
+
+            // Load Preview PDF via PDF.js
+            try {
+                const previewLoading = document.getElementById('edit-preview-loading');
+                const previewWrapper = document.getElementById('edit-preview-wrapper');
+                
+                const previewUrl = `${config.baseUrl}/preview/${state.documentId}`;
+                previewPdfDoc = await pdfjsLib.getDocument(previewUrl).promise;
+
+                if (previewLoading) previewLoading.classList.add('hidden');
+                if (previewWrapper) previewWrapper.classList.remove('hidden');
+
+                renderPreviewPage(1);
+            } catch (e) {
+                console.warn('Live preview canvas error:', e);
+                const previewLoading = document.getElementById('edit-preview-loading');
+                if (previewLoading) previewLoading.innerHTML = `<span class="text-xs text-slate-400 font-bold">Document Ready (Preview Unavailable)</span>`;
+            }
+        };
+
+        const renderPreviewPage = async (pageNo) => {
+            if (!previewPdfDoc) return;
+            previewCurrentPage = Math.max(1, Math.min(previewPdfDoc.numPages, pageNo));
+
+            const pageIndicator = document.getElementById('edit-page-indicator');
+            if (pageIndicator) pageIndicator.textContent = `Page ${previewCurrentPage} of ${previewPdfDoc.numPages}`;
+
+            const btnPrev = document.getElementById('btn-edit-prev-page');
+            const btnNext = document.getElementById('btn-edit-next-page');
+            if (btnPrev) btnPrev.disabled = (previewCurrentPage === 1);
+            if (btnNext) btnNext.disabled = (previewCurrentPage === previewPdfDoc.numPages);
+
+            const page = await previewPdfDoc.getPage(previewCurrentPage);
+            const canvas = document.getElementById('edit-preview-canvas');
+            if (!canvas) return;
+
+            const viewport = page.getViewport({ scale: 0.8 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const context = canvas.getContext('2d');
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            updateLiveOverlay();
+        };
+
+        document.getElementById('btn-edit-prev-page')?.addEventListener('click', () => {
+            if (previewCurrentPage > 1) renderPreviewPage(previewCurrentPage - 1);
+        });
+        document.getElementById('btn-edit-next-page')?.addEventListener('click', () => {
+            if (previewPdfDoc && previewCurrentPage < previewPdfDoc.numPages) renderPreviewPage(previewCurrentPage + 1);
+        });
+
+        const updateLiveOverlay = () => {
+            const wrapper = document.getElementById('edit-preview-wrapper');
+            const overlay = document.getElementById('edit-preview-overlay');
+            if (!wrapper || !overlay) return;
+
+            overlay.innerHTML = '';
+
+            if (toolType === 'rotate-pdf') {
+                wrapper.style.transform = `rotate(${state.selectedRotation}deg)`;
+            } else {
+                wrapper.style.transform = 'none';
+            }
+
+            if (toolType === 'add-watermark') {
+                const text = document.getElementById('edit-watermark-text')?.value || 'CONFIDENTIAL';
+                const rotation = document.getElementById('edit-watermark-rotation')?.value || '45';
+                const opacity = document.getElementById('edit-watermark-opacity')?.value || '0.3';
+
+                const wmEl = document.createElement('div');
+                wmEl.className = 'absolute inset-0 flex items-center justify-center font-black text-slate-800 text-3xl uppercase tracking-widest pointer-events-none select-none';
+                wmEl.style.transform = `rotate(${rotation}deg)`;
+                wmEl.style.opacity = opacity;
+                wmEl.textContent = text;
+                overlay.appendChild(wmEl);
+            }
+
+            if (toolType === 'add-page-numbers') {
+                const pos = document.getElementById('edit-pn-position')?.value || 'bottom-center';
+                const start = parseInt(document.getElementById('edit-pn-start')?.value || '1');
+                const displayNum = start + (previewCurrentPage - 1);
+
+                const pnEl = document.createElement('div');
+                pnEl.className = 'absolute px-2 py-0.5 bg-slate-900/80 text-white font-mono text-[10px] font-bold rounded shadow pointer-events-none';
+
+                if (pos === 'top-right') {
+                    pnEl.style.top = '12px';
+                    pnEl.style.right = '12px';
+                } else if (pos === 'bottom-right') {
+                    pnEl.style.bottom = '12px';
+                    pnEl.style.right = '12px';
+                } else {
+                    // bottom-center
+                    pnEl.style.bottom = '12px';
+                    pnEl.style.left = '50%';
+                    pnEl.style.transform = 'translateX(-50%)';
+                }
+
+                pnEl.textContent = `Page ${displayNum} of ${state.totalPages}`;
+                overlay.appendChild(pnEl);
+            }
+
+            if (toolType === 'crop-pdf') {
+                const top = parseFloat(document.getElementById('edit-crop-top')?.value || '10');
+                const bottom = parseFloat(document.getElementById('edit-crop-bottom')?.value || '10');
+                const left = parseFloat(document.getElementById('edit-crop-left')?.value || '10');
+                const right = parseFloat(document.getElementById('edit-crop-right')?.value || '10');
+
+                const cropBox = document.createElement('div');
+                cropBox.className = 'absolute border-2 border-dashed border-red-500 bg-red-500/10 pointer-events-none';
+                cropBox.style.top = `${top}px`;
+                cropBox.style.bottom = `${bottom}px`;
+                cropBox.style.left = `${left}px`;
+                cropBox.style.right = `${right}px`;
+                overlay.appendChild(cropBox);
+            }
+
+            if (toolType === 'edit-pdf' || toolType === 'pdf-forms') {
+                const note = document.getElementById('edit-annotation-text')?.value || '';
+                if (note) {
+                    const noteEl = document.createElement('div');
+                    noteEl.className = 'absolute top-6 left-6 px-3 py-1.5 bg-purple-600 text-white font-bold text-xs rounded-lg shadow-lg pointer-events-none';
+                    noteEl.textContent = note;
+                    overlay.appendChild(noteEl);
+                }
+            }
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('edit-step-phone').classList.remove('hidden');
+            document.getElementById('edit-step-waiting').classList.add('hidden');
+            document.getElementById('edit-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('edit-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('edit-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('edit-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('edit-step-phone').classList.add('hidden');
+            document.getElementById('edit-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startPaymentPolling(result.checkout_request_id);
+                } else {
+                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
+
+            state.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(state.paymentPollingInterval);
+                        executeProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(state.paymentPollingInterval);
+                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(state.paymentPollingInterval);
+                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showPaymentFailed = (msg) => {
+            document.getElementById('edit-step-waiting').classList.add('hidden');
+            document.getElementById('edit-step-failed').classList.remove('hidden');
+            document.getElementById('edit-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-edit-retry').addEventListener('click', () => {
+            document.getElementById('edit-step-failed').classList.add('hidden');
+            document.getElementById('edit-step-phone').classList.remove('hidden');
+        });
+
+        const executeProcess = async () => {
+            try {
+                let bodyData = {};
+
+                if (toolType === 'rotate-pdf') {
+                    bodyData.rotation = state.selectedRotation;
+                } else if (toolType === 'add-watermark') {
+                    bodyData.watermark_text = document.getElementById('edit-watermark-text')?.value || 'CONFIDENTIAL';
+                    bodyData.rotation = parseInt(document.getElementById('edit-watermark-rotation')?.value || '45');
+                    bodyData.opacity = parseFloat(document.getElementById('edit-watermark-opacity')?.value || '0.3');
+                } else if (toolType === 'add-page-numbers') {
+                    bodyData.position = document.getElementById('edit-pn-position')?.value || 'bottom-center';
+                    bodyData.start_number = parseInt(document.getElementById('edit-pn-start')?.value || '1');
+                } else if (toolType === 'crop-pdf') {
+                    bodyData.margin_top = parseFloat(document.getElementById('edit-crop-top')?.value || '10');
+                    bodyData.margin_bottom = parseFloat(document.getElementById('edit-crop-bottom')?.value || '10');
+                    bodyData.margin_left = parseFloat(document.getElementById('edit-crop-left')?.value || '10');
+                    bodyData.margin_right = parseFloat(document.getElementById('edit-crop-right')?.value || '10');
+                } else if (toolType === 'edit-pdf' || toolType === 'pdf-forms') {
+                    const text = document.getElementById('edit-annotation-text')?.value || '';
+                    bodyData.annotations = [{ page: 1, text: text, x: 20, y: 20, size: 12 }];
+                }
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/edit/process/${state.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify(bodyData),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-edit').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to process document editing.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error editing document. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-edit-another').addEventListener('click', () => {
+            state = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, selectedRotation: 90, paymentPollingInterval: null };
             successZone.classList.add('hidden');
             uploadZone.classList.remove('hidden');
         });
