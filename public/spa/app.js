@@ -158,6 +158,24 @@ class App {
             return;
         }
 
+        if (hash === '#/tool/remove-pages' || hash === '#/tool/extract-pages' ||
+            hash === '#/tool/organize-pdf' || hash === '#/tool/scan-to-pdf') {
+            const toolType = hash.replace('#/tool/', '').split('?')[0];
+            this.renderOrganizeTool(toolType);
+            return;
+        }
+
+        if (hash.startsWith('#/tool/all-pdf-tools') || hash.startsWith('#/tool/convert-pdf') || 
+            hash.startsWith('#/tool/jpg-to-pdf') || hash.startsWith('#/tool/word-to-pdf') ||
+            hash.startsWith('#/tool/ppt-to-pdf') || hash.startsWith('#/tool/excel-to-pdf') ||
+            hash.startsWith('#/tool/html-to-pdf') || hash.startsWith('#/tool/pdf-to-jpg') ||
+            hash.startsWith('#/tool/pdf-to-word') || hash.startsWith('#/tool/pdf-to-ppt') ||
+            hash.startsWith('#/tool/pdf-to-excel') || hash.startsWith('#/tool/pdf-to-pdfa')) {
+            const toolType = hash.replace('#/tool/', '').split('?')[0];
+            this.renderConvertPdfTool(toolType);
+            return;
+        }
+
         const routeHandler = this.routes[hash] || this.routes['#/'];
         routeHandler();
     }
@@ -2335,10 +2353,8 @@ class App {
         `;
     }
 
-    // ─── VIEW 4: MERGE PDF TOOL ─────────────────────────────────
-    renderMergePdfTool() {
-        this.appEl.innerHTML = `
-            <!-- Navigation -->
+    getNavbarHtml(activeRoute = '') {
+        return `
             <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
                 <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
                     <a href="#/" class="flex items-center gap-3">
@@ -2350,11 +2366,204 @@ class App {
                     </a>
 
                     <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        <a href="#/tool/merge-pdf" class="text-purple-600 transition-colors py-2 font-black">MERGE PDF</a>
-                        <a href="#/tool/split-pdf" class="hover:text-purple-600 transition-colors py-2">SPLIT PDF</a>
-                        <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
+                        <a href="#/tool/merge-pdf" class="${activeRoute === 'merge-pdf' ? 'text-purple-600 font-black' : 'hover:text-purple-600'} transition-colors py-2">MERGE PDF</a>
+                        <a href="#/tool/split-pdf" class="${activeRoute === 'split-pdf' ? 'text-purple-600 font-black' : 'hover:text-purple-600'} transition-colors py-2">SPLIT PDF</a>
+                        <a href="#/tool/compress-pdf" class="${activeRoute === 'compress-pdf' ? 'text-purple-600 font-black' : 'hover:text-purple-600'} transition-colors py-2">COMPRESS PDF</a>
+
+                        <!-- CONVERT PDF Dropdown -->
+                        <div class="relative group py-2">
+                            <a href="#/tool/convert-pdf" class="flex items-center gap-1 ${activeRoute.includes('convert') ? 'text-purple-600 font-black' : 'hover:text-purple-600'} transition-colors uppercase font-bold focus:outline-none">
+                                CONVERT PDF
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </a>
+                            <div class="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] hidden group-hover:block hover:block animate-fade-in z-50">
+                                <div class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid grid-cols-2 gap-6 text-left normal-case">
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
+                                        <div class="space-y-2">
+                                            <a href="#/tool/jpg-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[10px]">JPG</span> JPG to PDF
+                                            </a>
+                                            <a href="#/tool/word-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> WORD to PDF
+                                            </a>
+                                            <a href="#/tool/ppt-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> POWERPOINT to PDF
+                                            </a>
+                                            <a href="#/tool/excel-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px]">XLS</span> EXCEL to PDF
+                                            </a>
+                                            <a href="#/tool/html-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[10px]">HTML</span> HTML to PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT FROM PDF</h4>
+                                        <div class="space-y-2">
+                                            <a href="#/tool/pdf-to-jpg" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[10px]">JPG</span> PDF to JPG
+                                            </a>
+                                            <a href="#/tool/pdf-to-word" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> PDF to WORD
+                                            </a>
+                                            <a href="#/tool/pdf-to-ppt" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> PDF to POWERPOINT
+                                            </a>
+                                            <a href="#/tool/pdf-to-excel" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[10px]">XLS</span> PDF to EXCEL
+                                            </a>
+                                            <a href="#/tool/pdf-to-pdfa" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[10px]">PDFA</span> PDF to PDF/A
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ALL PDF TOOLS Dropdown -->
+                        <div class="relative group py-2">
+                            <a href="#/tool/convert-pdf" class="flex items-center gap-1 text-purple-600 hover:text-purple-700 transition-colors uppercase font-extrabold focus:outline-none">
+                                ALL PDF TOOLS
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </a>
+                            <div class="absolute right-0 lg:left-1/2 lg:-translate-x-1/2 top-full pt-2 w-[1240px] max-w-[96vw] hidden group-hover:block hover:block animate-fade-in z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
+                                <div class="bg-white border border-slate-200 rounded-3xl shadow-2xl p-7 max-h-[88vh] overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5 text-left normal-case">
+                                    <!-- ORGANIZE PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">ORGANIZE PDF</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/merge-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-red-50 text-red-500 flex items-center justify-center font-bold text-[9px]">🧩</span> Merge PDF
+                                            </a>
+                                            <a href="#/tool/split-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">✂️</span> Split PDF
+                                            </a>
+                                            <a href="#/tool/remove-pages" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-[9px]">❌</span> Remove pages
+                                            </a>
+                                            <a href="#/tool/extract-pages" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">📤</span> Extract pages
+                                            </a>
+                                            <a href="#/tool/organize-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🗂️</span> Organize PDF
+                                            </a>
+                                            <a href="#/tool/scan-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-[9px]">📷</span> Scan to PDF
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- OPTIMIZE PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">OPTIMIZE PDF</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/compress-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">📉</span> Compress PDF
+                                            </a>
+                                            <a href="#/tool/repair-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-green-50 text-green-600 flex items-center justify-center font-bold text-[9px]">🛠️</span> Repair PDF
+                                            </a>
+                                            <a href="#/tool/ocr-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-lime-50 text-lime-700 flex items-center justify-center font-bold text-[9px]">🔍</span> OCR PDF
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- CONVERT TO PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/jpg-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">🖼️</span> JPG to PDF
+                                            </a>
+                                            <a href="#/tool/word-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">DOC</span> WORD to PDF
+                                            </a>
+                                            <a href="#/tool/ppt-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">PPT</span> POWERPOINT to PDF
+                                            </a>
+                                            <a href="#/tool/excel-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">XLS</span> EXCEL to PDF
+                                            </a>
+                                            <a href="#/tool/html-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🌐</span> HTML to PDF
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- CONVERT FROM PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT FROM PDF</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/pdf-to-jpg" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">🖼️</span> PDF to JPG
+                                            </a>
+                                            <a href="#/tool/pdf-to-word" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">DOC</span> PDF to WORD
+                                            </a>
+                                            <a href="#/tool/pdf-to-ppt" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">PPT</span> PDF to POWERPOINT
+                                            </a>
+                                            <a href="#/tool/pdf-to-excel" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">XLS</span> PDF to EXCEL
+                                            </a>
+                                            <a href="#/tool/pdf-to-pdfa" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[9px]">PDFA</span> PDF to PDF/A
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- EDIT PDF -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">EDIT PDF</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/rotate-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🔄</span> Rotate PDF
+                                            </a>
+                                            <a href="#/tool/add-page-numbers" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-[9px]">🔢</span> Add page numbers
+                                            </a>
+                                            <a href="#/tool/add-watermark" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center font-bold text-[9px]">💧</span> Add watermark
+                                            </a>
+                                            <a href="#/tool/crop-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-[9px]">✂️</span> Crop PDF
+                                            </a>
+                                            <a href="#/tool/edit-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-[9px]">✏️</span> Edit PDF
+                                            </a>
+                                            <a href="#/tool/pdf-forms" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-[9px]">📋</span> PDF Forms
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- PDF SECURITY -->
+                                    <div>
+                                        <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">PDF SECURITY</h4>
+                                        <div class="space-y-1">
+                                            <a href="#/tool/unlock-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[9px]">🔓</span> Unlock PDF
+                                            </a>
+                                            <a href="#/tool/protect-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">🛡️</span> Protect PDF
+                                            </a>
+                                            <a href="#/tool/sign-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-[9px]">✍️</span> Sign PDF
+                                            </a>
+                                            <a href="#/tool/redact-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px]">⬛</span> Redact PDF
+                                            </a>
+                                            <a href="#/tool/compare-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                                <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">📊</span> Compare PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-3">
@@ -2362,6 +2571,13 @@ class App {
                     </div>
                 </div>
             </nav>
+        `;
+    }
+
+    // ─── VIEW 4: MERGE PDF TOOL ─────────────────────────────────
+    renderMergePdfTool() {
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml('merge-pdf')}
 
             <!-- Main Content Container -->
             <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
@@ -2616,16 +2832,25 @@ class App {
         });
 
         const renderQueueState = () => {
-            uploadZone.classList.add('hidden');
-            queueZone.classList.remove('hidden');
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (queueZone) queueZone.classList.remove('hidden');
 
-            document.getElementById('merge-file-count').textContent = currentMergeState.files.length;
-            document.getElementById('summary-doc-count').textContent = currentMergeState.files.length;
-            document.getElementById('summary-page-count').textContent = `${currentMergeState.totalPages} pages`;
-            document.getElementById('summary-total-cost').textContent = `KES ${currentMergeState.totalCost}`;
-            document.getElementById('merge-modal-amount').textContent = `KES ${currentMergeState.totalCost}`;
+            const elFileCount = document.getElementById('merge-file-count');
+            if (elFileCount) elFileCount.textContent = currentMergeState.files.length;
 
-            fileItemsContainer.innerHTML = '';
+            const elDocCount = document.getElementById('summary-doc-count');
+            if (elDocCount) elDocCount.textContent = currentMergeState.files.length;
+
+            const elPageCount = document.getElementById('summary-page-count');
+            if (elPageCount) elPageCount.textContent = `${currentMergeState.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('summary-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${currentMergeState.totalCost}`;
+
+            const elModalAmount = document.getElementById('merge-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${currentMergeState.totalCost}`;
+
+            if (fileItemsContainer) fileItemsContainer.innerHTML = '';
 
             currentMergeState.files.forEach((file, idx) => {
                 const itemEl = document.createElement('div');
@@ -2801,30 +3026,7 @@ class App {
     // ─── VIEW 5: SPLIT PDF TOOL ─────────────────────────────────
     renderSplitPdfTool() {
         this.appEl.innerHTML = `
-            <!-- Navigation -->
-            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
-                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
-                    <a href="#/" class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
-                        <div>
-                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
-                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
-                        </div>
-                    </a>
-
-                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        <a href="#/tool/merge-pdf" class="hover:text-purple-600 transition-colors py-2">MERGE PDF</a>
-                        <a href="#/tool/split-pdf" class="text-purple-600 transition-colors py-2 font-black">SPLIT PDF</a>
-                        <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
-                    </div>
-                </div>
-            </nav>
+            ${this.getNavbarHtml('split-pdf')}
 
             <!-- Main Content Container -->
             <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
@@ -3136,13 +3338,20 @@ class App {
         tabExtract.addEventListener('click', () => switchMode('extract'));
 
         const renderSplitConfigState = () => {
-            uploadZone.classList.add('hidden');
-            configZone.classList.remove('hidden');
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
 
-            document.getElementById('split-filename').textContent = currentSplitState.originalName;
-            document.getElementById('split-total-pages').textContent = `${currentSplitState.totalPages} pages`;
-            document.getElementById('split-total-cost').textContent = `KES ${currentSplitState.totalCost}`;
-            document.getElementById('split-modal-amount').textContent = `KES ${currentSplitState.totalCost}`;
+            const elFilename = document.getElementById('split-filename');
+            if (elFilename) elFilename.textContent = currentSplitState.originalName;
+
+            const elTotalPages = document.getElementById('split-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${currentSplitState.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('split-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${currentSplitState.totalCost}`;
+
+            const elModalAmount = document.getElementById('split-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${currentSplitState.totalCost}`;
 
             renderRangesList();
         };
@@ -3330,30 +3539,7 @@ class App {
     // ─── VIEW 6: COMPRESS PDF TOOL ──────────────────────────────
     renderCompressPdfTool() {
         this.appEl.innerHTML = `
-            <!-- Navigation -->
-            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
-                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
-                    <a href="#/" class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
-                        <div>
-                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
-                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
-                        </div>
-                    </a>
-
-                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        <a href="#/tool/merge-pdf" class="hover:text-purple-600 transition-colors py-2">MERGE PDF</a>
-                        <a href="#/tool/split-pdf" class="hover:text-purple-600 transition-colors py-2">SPLIT PDF</a>
-                        <a href="#/tool/compress-pdf" class="text-purple-600 transition-colors py-2 font-black">COMPRESS PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
-                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
-                    </div>
-                </div>
-            </nav>
+            ${this.getNavbarHtml('compress-pdf')}
 
             <!-- Main Content Container -->
             <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
@@ -3641,15 +3827,24 @@ class App {
         });
 
         const renderCompressConfigState = () => {
-            uploadZone.classList.add('hidden');
-            configZone.classList.remove('hidden');
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
 
             const mbSize = (currentCompressState.fileSize / (1024 * 1024)).toFixed(2);
-            document.getElementById('compress-filename').textContent = currentCompressState.originalName;
-            document.getElementById('compress-orig-size').textContent = `${mbSize} MB`;
-            document.getElementById('compress-total-pages').textContent = `${currentCompressState.totalPages} pages`;
-            document.getElementById('compress-total-cost').textContent = `KES ${currentCompressState.totalCost}`;
-            document.getElementById('compress-modal-amount').textContent = `KES ${currentCompressState.totalCost}`;
+            const elFilename = document.getElementById('compress-filename');
+            if (elFilename) elFilename.textContent = currentCompressState.originalName;
+
+            const elOrigSize = document.getElementById('compress-orig-size');
+            if (elOrigSize) elOrigSize.textContent = `${mbSize} MB`;
+
+            const elTotalPages = document.getElementById('compress-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${currentCompressState.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('compress-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${currentCompressState.totalCost}`;
+
+            const elModalAmount = document.getElementById('compress-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${currentCompressState.totalCost}`;
         };
 
         // Payment logic
@@ -3768,9 +3963,1059 @@ class App {
             uploadZone.classList.remove('hidden');
         });
     }
+
+    // ─── VIEW 7: CONVERT PDF TOOL SUITE ─────────────────────────
+    renderConvertPdfTool(toolType = 'convert-pdf') {
+        const toolsMap = {
+            'jpg-to-pdf': { title: 'JPG to PDF Converter', desc: 'Convert JPG, JPEG, or PNG images to PDF document.', accept: '.jpg,.jpeg,.png,.webp', label: 'Select Image File' },
+            'word-to-pdf': { title: 'WORD to PDF Converter', desc: 'Convert DOC and DOCX documents to PDF format.', accept: '.doc,.docx', label: 'Select Word Document' },
+            'ppt-to-pdf': { title: 'POWERPOINT to PDF Converter', desc: 'Convert PPT and PPTX presentations to PDF.', accept: '.ppt,.pptx', label: 'Select PowerPoint File' },
+            'excel-to-pdf': { title: 'EXCEL to PDF Converter', desc: 'Convert XLS and XLSX spreadsheets to PDF.', accept: '.xls,.xlsx', label: 'Select Excel Spreadsheet' },
+            'html-to-pdf': { title: 'HTML to PDF Converter', desc: 'Convert web pages or HTML files to PDF.', accept: '.html,.htm', label: 'Select HTML File' },
+            'pdf-to-jpg': { title: 'PDF to JPG Converter', desc: 'Extract pages or convert entire PDF into JPG images.', accept: '.pdf', label: 'Select PDF File' },
+            'pdf-to-word': { title: 'PDF to WORD Converter', desc: 'Convert PDF document into editable Word DOCX.', accept: '.pdf', label: 'Select PDF File' },
+            'pdf-to-ppt': { title: 'PDF to POWERPOINT Converter', desc: 'Convert PDF document into editable PowerPoint slides.', accept: '.pdf', label: 'Select PDF File' },
+            'pdf-to-excel': { title: 'PDF to EXCEL Converter', desc: 'Convert PDF tables into Excel XLSX spreadsheets.', accept: '.pdf', label: 'Select PDF File' },
+            'pdf-to-pdfa': { title: 'PDF to PDF/A Converter', desc: 'Convert standard PDF to ISO PDF/A compliance format.', accept: '.pdf', label: 'Select PDF File' },
+        };
+
+        const isHub = (toolType === 'convert-pdf' || !toolsMap[toolType]);
+        const activeTool = toolsMap[toolType] || { title: 'Convert PDF Tools', desc: 'Convert files to and from PDF format', accept: '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.png', label: 'Select Document' };
+
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml(toolType)}
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-5xl mx-auto px-6 w-full text-center">
+                    
+                    ${isHub ? `
+                        <!-- HUB VIEW: Grid of all PDF Tools (6 Categories) -->
+                        <div class="mb-10 animate-fade-in">
+                            <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-4 border border-purple-100 shadow-sm">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            </div>
+                            <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Every tool you need to work with PDFs in one place</h1>
+                            <p class="text-slate-500 text-base max-w-2xl mx-auto">Every tool 100% free & easy to use! Merge, split, compress, convert, rotate, unlock and watermark PDFs with just a few clicks. KES 1 per page via M-Pesa.</p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-6xl mx-auto">
+                            <!-- Category 1: ORGANIZE PDF -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-red-500 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-red-500"></span> ORGANIZE PDF
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/merge-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-red-50 text-red-500 font-bold text-sm flex items-center justify-center">🧩</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Merge PDF</h4><p class="text-[11px] text-slate-400">Combine multiple PDFs into one</p></div>
+                                    </a>
+                                    <a href="#/tool/split-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 font-bold text-sm flex items-center justify-center">✂️</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Split PDF</h4><p class="text-[11px] text-slate-400">Separate pages into single files</p></div>
+                                    </a>
+                                    <a href="#/tool/remove-pages" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 font-bold text-sm flex items-center justify-center">❌</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Remove pages</h4><p class="text-[11px] text-slate-400">Delete unwanted PDF pages</p></div>
+                                    </a>
+                                    <a href="#/tool/extract-pages" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 font-bold text-sm flex items-center justify-center">📤</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Extract pages</h4><p class="text-[11px] text-slate-400">Save specific pages as new PDF</p></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Category 2: OPTIMIZE PDF -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-emerald-600 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> OPTIMIZE PDF
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/compress-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-sm flex items-center justify-center">📉</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Compress PDF</h4><p class="text-[11px] text-slate-400">Reduce file size (< 25MB court limit)</p></div>
+                                    </a>
+                                    <a href="#/tool/repair-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center">🛠️</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Repair PDF</h4><p class="text-[11px] text-slate-400">Fix damaged & corrupt PDF files</p></div>
+                                    </a>
+                                    <a href="#/tool/ocr-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-lime-50 text-lime-700 font-bold text-sm flex items-center justify-center">🔍</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">OCR PDF</h4><p class="text-[11px] text-slate-400">Convert scanned PDF to searchable text</p></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Category 3: CONVERT TO PDF -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> CONVERT TO PDF
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/jpg-to-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 font-bold text-xs flex items-center justify-center">JPG</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">JPG to PDF</h4><p class="text-[11px] text-slate-400">Convert JPG, PNG, WEBP to PDF</p></div>
+                                    </a>
+                                    <a href="#/tool/word-to-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center">DOC</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">WORD to PDF</h4><p class="text-[11px] text-slate-400">Convert DOC and DOCX to PDF</p></div>
+                                    </a>
+                                    <a href="#/tool/ppt-to-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 font-bold text-xs flex items-center justify-center">PPT</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">POWERPOINT to PDF</h4><p class="text-[11px] text-slate-400">Convert PPT and PPTX to PDF</p></div>
+                                    </a>
+                                    <a href="#/tool/excel-to-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center">XLS</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">EXCEL to PDF</h4><p class="text-[11px] text-slate-400">Convert XLS and XLSX to PDF</p></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Category 4: CONVERT FROM PDF -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> CONVERT FROM PDF
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/pdf-to-jpg" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 font-bold text-xs flex items-center justify-center">JPG</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">PDF to JPG</h4><p class="text-[11px] text-slate-400">Extract PDF pages as JPG images</p></div>
+                                    </a>
+                                    <a href="#/tool/pdf-to-word" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center">DOC</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">PDF to WORD</h4><p class="text-[11px] text-slate-400">Convert PDF to editable Word DOCX</p></div>
+                                    </a>
+                                    <a href="#/tool/pdf-to-ppt" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 font-bold text-xs flex items-center justify-center">PPT</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">PDF to POWERPOINT</h4><p class="text-[11px] text-slate-400">Convert PDF to PowerPoint presentation</p></div>
+                                    </a>
+                                    <a href="#/tool/pdf-to-excel" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center">XLS</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">PDF to EXCEL</h4><p class="text-[11px] text-slate-400">Extract tables to Excel spreadsheet</p></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Category 5: EDIT PDF -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-purple-600 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> EDIT PDF
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/rotate-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 font-bold text-sm flex items-center justify-center">🔄</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Rotate PDF</h4><p class="text-[11px] text-slate-400">Rotate pages to portrait or landscape</p></div>
+                                    </a>
+                                    <a href="#/tool/add-page-numbers" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 font-bold text-sm flex items-center justify-center">🔢</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Add page numbers</h4><p class="text-[11px] text-slate-400">Insert court-compliant page numbers</p></div>
+                                    </a>
+                                    <a href="#/tool/add-watermark" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-fuchsia-50 text-fuchsia-600 font-bold text-sm flex items-center justify-center">💧</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Add watermark</h4><p class="text-[11px] text-slate-400">Stamp text or image on pages</p></div>
+                                    </a>
+                                    <a href="#/tool/edit-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 font-bold text-sm flex items-center justify-center">✏️</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Edit PDF</h4><p class="text-[11px] text-slate-400">Add text, shapes & annotations</p></div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Category 6: PDF SECURITY -->
+                            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span> PDF SECURITY
+                                </h3>
+                                <div class="space-y-1.5">
+                                    <a href="#/tool/unlock-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm flex items-center justify-center">🔓</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Unlock PDF</h4><p class="text-[11px] text-slate-400">Remove PDF passwords & security</p></div>
+                                    </a>
+                                    <a href="#/tool/protect-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm flex items-center justify-center">🛡️</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Protect PDF</h4><p class="text-[11px] text-slate-400">Encrypt PDF with password</p></div>
+                                    </a>
+                                    <a href="#/tool/sign-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 font-bold text-sm flex items-center justify-center">✍️</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Sign PDF</h4><p class="text-[11px] text-slate-400">Sign document with digital signature</p></div>
+                                    </a>
+                                    <a href="#/tool/redact-pdf" class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                        <span class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold text-sm flex items-center justify-center">⬛</span>
+                                        <div><h4 class="font-bold text-slate-800 text-sm group-hover:text-purple-600">Redact PDF</h4><p class="text-[11px] text-slate-400">Permanently black out sensitive text</p></div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <!-- WORKSPACE VIEW: Single Converter Workspace -->
+                        <div class="mb-10 animate-fade-in">
+                            <a href="#/tool/convert-pdf" class="inline-flex items-center gap-1.5 text-xs text-purple-600 font-bold hover:underline mb-4">
+                                ← Back to all convert tools
+                            </a>
+                            <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
+                            <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc}. KES 1 per page via M-Pesa.</p>
+                        </div>
+
+                        <!-- STEP 1: Upload Zone -->
+                        <div id="convert-upload-zone" class="max-w-xl mx-auto">
+                            <label id="convert-drop-area" class="group relative block cursor-pointer">
+                                <div class="border-2 border-dashed border-slate-300 hover:border-purple-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-purple-50/20 shadow-sm hover:shadow-xl">
+                                    <div class="flex flex-col items-center gap-4">
+                                        <div class="w-20 h-20 rounded-2xl bg-purple-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-purple-600">
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-800 font-bold text-xl mb-1">${activeTool.label}</p>
+                                            <p class="text-slate-500 text-sm">or drop file here · Formats (${activeTool.accept})</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="convert-file-input" class="hidden" accept="${activeTool.accept}">
+                                </div>
+                            </label>
+
+                            <div id="convert-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                                <div class="w-10 h-10 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                <p class="text-slate-800 font-bold text-sm">Analyzing file structure...</p>
+                                <p class="text-slate-500 text-xs mt-1">Preparing conversion layout</p>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: Summary Zone -->
+                        <div id="convert-config-zone" class="hidden max-w-lg mx-auto text-left animate-fade-in">
+                            <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl space-y-6">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Conversion Details</h4>
+
+                                <div class="space-y-3 text-xs text-slate-600">
+                                    <div>
+                                        <span class="block text-slate-400 font-medium text-[10px] uppercase">File Name</span>
+                                        <strong id="convert-filename" class="text-slate-900 font-bold block truncate">Document.pdf</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Conversion Tool</span>
+                                        <strong class="text-purple-600 font-bold uppercase">${toolType}</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="convert-total-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-4 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="convert-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-convert-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Convert Document & Pay
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- STEP 3: Success Download Zone -->
+                        <div id="convert-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                            <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                            <h3 class="text-2xl font-black text-slate-900 mb-1">Conversion Completed!</h3>
+                            <p class="text-slate-500 text-xs mb-6">Your converted file is ready for download.</p>
+                            
+                            <a id="btn-download-converted" href="#" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 mb-4">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download Converted Document
+                            </a>
+
+                            <button id="btn-convert-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Convert Another Document</button>
+                        </div>
+                    `}
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="convert-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="convert-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="convert-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-700/10 flex items-center justify-center mx-auto mb-3 text-purple-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">Convert PDF Tool · <span id="convert-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="convert-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="convert-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-purple-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-convert-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-purple-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="convert-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="convert-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="convert-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-convert-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (isHub) return; // Hub view complete
+
+        // ─── CONVERT WORKSPACE LOGIC ─────────────────────────────
+        let currentConvertState = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            totalCost: 0,
+            conversionType: toolType,
+            paymentPollingInterval: null,
+        };
+
+        const fileInput = document.getElementById('convert-file-input');
+        const uploadZone = document.getElementById('convert-upload-zone');
+        const uploadLoading = document.getElementById('convert-upload-loading');
+        const configZone = document.getElementById('convert-config-zone');
+        const successZone = document.getElementById('convert-success-zone');
+
+        const paymentModal = document.getElementById('convert-payment-modal');
+        const btnPay = document.getElementById('btn-convert-pay');
+        const btnStkSubmit = document.getElementById('btn-convert-stk-submit');
+
+        const handleConvertFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('conversion_type', toolType);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/convert/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    currentConvertState.documentId = result.document_id;
+                    currentConvertState.originalName = result.original_name;
+                    currentConvertState.totalPages = result.page_count;
+                    currentConvertState.totalCost = result.cost;
+
+                    renderConvertConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload document for conversion.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleConvertFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Drag & Drop
+        const dropArea = document.getElementById('convert-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleConvertFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        const renderConvertConfigState = () => {
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
+
+            const elFilename = document.getElementById('convert-filename');
+            if (elFilename) elFilename.textContent = currentConvertState.originalName;
+
+            const elTotalPages = document.getElementById('convert-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${currentConvertState.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('convert-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${currentConvertState.totalCost}`;
+
+            const elModalAmount = document.getElementById('convert-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${currentConvertState.totalCost}`;
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('convert-step-phone').classList.remove('hidden');
+            document.getElementById('convert-step-waiting').classList.add('hidden');
+            document.getElementById('convert-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('convert-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('convert-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('convert-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('convert-step-phone').classList.add('hidden');
+            document.getElementById('convert-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: currentConvertState.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startConvertPaymentPolling(result.checkout_request_id);
+                } else {
+                    showConvertPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showConvertPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startConvertPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (currentConvertState.paymentPollingInterval) clearInterval(currentConvertState.paymentPollingInterval);
+
+            currentConvertState.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(currentConvertState.paymentPollingInterval);
+                        executeConvertProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(currentConvertState.paymentPollingInterval);
+                        showConvertPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(currentConvertState.paymentPollingInterval);
+                    showConvertPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showConvertPaymentFailed = (msg) => {
+            document.getElementById('convert-step-waiting').classList.add('hidden');
+            document.getElementById('convert-step-failed').classList.remove('hidden');
+            document.getElementById('convert-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-convert-retry').addEventListener('click', () => {
+            document.getElementById('convert-step-failed').classList.add('hidden');
+            document.getElementById('convert-step-phone').classList.remove('hidden');
+        });
+
+        const executeConvertProcess = async () => {
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/convert/process/${currentConvertState.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-converted').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to convert document.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error processing conversion. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-convert-another').addEventListener('click', () => {
+            currentConvertState = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, conversionType: toolType, paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
+
+    // ─── VIEW 8: ORGANIZE PDF SUITE (Remove, Extract, Organize, Scan) ──────
+    renderOrganizeTool(toolType = 'organize-pdf') {
+        const toolsMap = {
+            'remove-pages': {
+                title: 'Remove PDF Pages',
+                desc: 'Select and delete unwanted pages from your PDF document.',
+                mode: 'remove',
+                accept: '.pdf',
+                label: 'Select PDF file',
+                icon: '❌'
+            },
+            'extract-pages': {
+                title: 'Extract PDF Pages',
+                desc: 'Extract specific pages from your PDF into a new PDF document.',
+                mode: 'extract',
+                accept: '.pdf',
+                label: 'Select PDF file',
+                icon: '📤'
+            },
+            'organize-pdf': {
+                title: 'Organize PDF Pages',
+                desc: 'Sort, reorder, and rotate pages in your PDF document.',
+                mode: 'organize',
+                accept: '.pdf',
+                label: 'Select PDF file',
+                icon: '🗂️'
+            },
+            'scan-to-pdf': {
+                title: 'Scan to PDF',
+                desc: 'Convert photos, receipts, and scanned images into a PDF document.',
+                mode: 'scan',
+                accept: '.jpg,.jpeg,.png,.webp',
+                label: 'Select scanned images',
+                icon: '📷'
+            }
+        };
+
+        const activeTool = toolsMap[toolType] || toolsMap['organize-pdf'];
+
+        this.appEl.innerHTML = `
+            ${this.getNavbarHtml(toolType)}
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <a href="#/tool/all-pdf-tools" class="inline-flex items-center gap-1.5 text-xs text-purple-600 font-bold hover:underline mb-4">
+                            ← Back to all PDF tools
+                        </a>
+                        <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-4 border border-purple-100 shadow-sm text-2xl">
+                            ${activeTool.icon}
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="org-upload-zone" class="max-w-xl mx-auto">
+                        <label id="org-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-purple-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-purple-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-purple-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-purple-600">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">${activeTool.label}</p>
+                                        <p class="text-slate-500 text-sm">or drop files here · Up to 100MB</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="org-file-input" class="hidden" accept="${activeTool.accept}" ${toolType === 'scan-to-pdf' ? 'multiple' : ''}>
+                            </div>
+                        </label>
+
+                        <!-- Upload loading indicator -->
+                        <div id="org-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Uploading and preparing pages...</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Configure Zone -->
+                    <div id="org-config-zone" class="hidden max-w-3xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left: Page Selection / Reorder Panel -->
+                            <div class="md:col-span-2 space-y-4">
+                                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <h3 id="org-filename" class="font-bold text-slate-800 text-sm truncate">Document.pdf</h3>
+                                        <span id="org-total-pages" class="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg flex-shrink-0">0 pages</span>
+                                    </div>
+
+                                    ${(toolType === 'remove-pages' || toolType === 'extract-pages') ? `
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                                ${toolType === 'remove-pages' ? 'Enter Page Numbers to Remove:' : 'Enter Page Numbers to Extract:'}
+                                            </label>
+                                            <input type="text" id="org-pages-input" placeholder="e.g. 1, 3, 5-8" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm font-bold focus:border-purple-500 focus:outline-none mb-2">
+                                            <p class="text-xs text-slate-400">Separate page numbers with commas or specify ranges (e.g., 1, 3, 5-8).</p>
+                                        </div>
+                                    ` : ''}
+
+                                    ${(toolType === 'organize-pdf' || toolType === 'scan-to-pdf') ? `
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                                Page Order & Orientation:
+                                            </label>
+                                            <p class="text-xs text-slate-400 mb-3">Re-order pages by clicking UP/DOWN or rotate pages.</p>
+                                            <div id="org-items-list" class="space-y-2">
+                                                <!-- Dynamic items list -->
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Right: Order Summary & Pay -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Order Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="org-summary-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="org-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-org-pay" class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Process & Pay via M-Pesa
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="org-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Document Ready!</h3>
+                        <p class="text-slate-500 text-xs mb-6">Your organized PDF document has been generated and is ready for download.</p>
+                        
+                        <a id="btn-download-org" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download PDF File
+                        </a>
+
+                        <button id="btn-org-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Process Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="org-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="org-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="org-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-700/10 flex items-center justify-center mx-auto mb-3 text-purple-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">${activeTool.title} · <span id="org-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="org-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="org-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-purple-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-org-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-purple-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="org-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="org-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="org-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-org-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Controller State
+        let state = {
+            documentId: null,
+            originalName: '',
+            totalPages: 0,
+            totalCost: 0,
+            pageOperations: [],
+            paymentPollingInterval: null
+        };
+
+        const fileInput = document.getElementById('org-file-input');
+        const uploadZone = document.getElementById('org-upload-zone');
+        const uploadLoading = document.getElementById('org-upload-loading');
+        const configZone = document.getElementById('org-config-zone');
+        const successZone = document.getElementById('org-success-zone');
+
+        const paymentModal = document.getElementById('org-payment-modal');
+        const btnPay = document.getElementById('btn-org-pay');
+        const btnStkSubmit = document.getElementById('btn-org-stk-submit');
+
+        const handleFileUpload = async (files) => {
+            if (!files || files.length === 0) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('tool_type', toolType);
+
+            if (toolType === 'scan-to-pdf') {
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files[]', files[i]);
+                }
+            } else {
+                formData.append('file', files[0]);
+            }
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/organize/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    state.documentId = result.document_id;
+                    state.originalName = result.original_name;
+                    state.totalPages = result.total_pages || result.page_count;
+                    state.totalCost = result.cost;
+
+                    // Initialize page operations array for reordering / rotating
+                    state.pageOperations = [];
+                    for (let p = 1; p <= state.totalPages; p++) {
+                        state.pageOperations.push({ page: p, rotate: 0 });
+                    }
+
+                    renderConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload document.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files));
+
+        const dropArea = document.getElementById('org-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-purple-500', 'bg-purple-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleFileUpload(e.dataTransfer.files);
+            }
+        });
+
+        const renderConfigState = () => {
+            if (uploadZone) uploadZone.classList.add('hidden');
+            if (configZone) configZone.classList.remove('hidden');
+
+            const elFilename = document.getElementById('org-filename');
+            if (elFilename) elFilename.textContent = state.originalName;
+
+            const elTotalPages = document.getElementById('org-total-pages');
+            if (elTotalPages) elTotalPages.textContent = `${state.totalPages} pages`;
+
+            const elSummaryPages = document.getElementById('org-summary-pages');
+            if (elSummaryPages) elSummaryPages.textContent = `${state.totalPages} pages`;
+
+            const elTotalCost = document.getElementById('org-total-cost');
+            if (elTotalCost) elTotalCost.textContent = `KES ${state.totalCost}`;
+
+            const elModalAmount = document.getElementById('org-modal-amount');
+            if (elModalAmount) elModalAmount.textContent = `KES ${state.totalCost}`;
+
+            if (toolType === 'organize-pdf' || toolType === 'scan-to-pdf') {
+                renderItemsList();
+            }
+        };
+
+        const renderItemsList = () => {
+            const listEl = document.getElementById('org-items-list');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+
+            state.pageOperations.forEach((op, idx) => {
+                const card = document.createElement('div');
+                card.className = 'flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+                        <span class="text-xs font-bold text-slate-800">Page ${op.page}</span>
+                        <span class="text-[10px] text-slate-400 font-medium">Rotation: ${op.rotate}°</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button data-action="rotate" data-index="${idx}" class="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-slate-200/60 rounded-lg transition-colors text-xs font-bold" title="Rotate 90°">🔄 Rotate</button>
+                        <button data-action="up" data-index="${idx}" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}">⬆️</button>
+                        <button data-action="down" data-index="${idx}" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors ${idx === state.pageOperations.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}">⬇️</button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+
+            listEl.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = e.currentTarget.dataset.action;
+                    const index = parseInt(e.currentTarget.dataset.index);
+
+                    if (action === 'rotate') {
+                        state.pageOperations[index].rotate = (state.pageOperations[index].rotate + 90) % 360;
+                        renderItemsList();
+                    } else if (action === 'up' && index > 0) {
+                        const temp = state.pageOperations[index];
+                        state.pageOperations[index] = state.pageOperations[index - 1];
+                        state.pageOperations[index - 1] = temp;
+                        renderItemsList();
+                    } else if (action === 'down' && index < state.pageOperations.length - 1) {
+                        const temp = state.pageOperations[index];
+                        state.pageOperations[index] = state.pageOperations[index + 1];
+                        state.pageOperations[index + 1] = temp;
+                        renderItemsList();
+                    }
+                });
+            });
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('org-step-phone').classList.remove('hidden');
+            document.getElementById('org-step-waiting').classList.add('hidden');
+            document.getElementById('org-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('org-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('org-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('org-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('org-step-phone').classList.add('hidden');
+            document.getElementById('org-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: state.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startPaymentPolling(result.checkout_request_id);
+                } else {
+                    showPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (state.paymentPollingInterval) clearInterval(state.paymentPollingInterval);
+
+            state.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(state.paymentPollingInterval);
+                        executeProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(state.paymentPollingInterval);
+                        showPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(state.paymentPollingInterval);
+                    showPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showPaymentFailed = (msg) => {
+            document.getElementById('org-step-waiting').classList.add('hidden');
+            document.getElementById('org-step-failed').classList.remove('hidden');
+            document.getElementById('org-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-org-retry').addEventListener('click', () => {
+            document.getElementById('org-step-failed').classList.add('hidden');
+            document.getElementById('org-step-phone').classList.remove('hidden');
+        });
+
+        const parsePageInput = (str) => {
+            if (!str) return [];
+            const result = new Set();
+            const parts = str.split(',');
+            parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.includes('-')) {
+                    const range = trimmed.split('-').map(n => parseInt(n.trim()));
+                    if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
+                        for (let p = Math.min(range[0], range[1]); p <= Math.max(range[0], range[1]); p++) {
+                            result.add(p);
+                        }
+                    }
+                } else {
+                    const page = parseInt(trimmed);
+                    if (!isNaN(page)) result.add(page);
+                }
+            });
+            return Array.from(result);
+        };
+
+        const executeProcess = async () => {
+            try {
+                let bodyData = { mode: activeTool.mode };
+
+                if (activeTool.mode === 'remove' || activeTool.mode === 'extract') {
+                    const rawInput = document.getElementById('org-pages-input')?.value || '';
+                    const pages = parsePageInput(rawInput);
+                    if (pages.length === 0) {
+                        alert('Please specify valid page numbers (e.g. 1, 3, 5-8).');
+                        paymentModal.classList.add('hidden');
+                        return;
+                    }
+                    bodyData.pages = pages;
+                } else if (activeTool.mode === 'organize') {
+                    bodyData.operations = state.pageOperations;
+                }
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/organize/process/${state.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify(bodyData),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+                    document.getElementById('btn-download-org').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to process document.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error processing document. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-org-another').addEventListener('click', () => {
+            state = { documentId: null, originalName: '', totalPages: 0, totalCost: 0, pageOperations: [], paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
 }
 
 new App();
+
 
 
 

@@ -30,13 +30,13 @@
             <a href="#/tool/compress-pdf" class="hover:text-purple-600 transition-colors py-2">COMPRESS PDF</a>
 
             <!-- CONVERT PDF Dropdown -->
-            <div class="relative group">
-                <button class="flex items-center gap-1 py-2 hover:text-purple-600 transition-colors uppercase font-bold focus:outline-none">
+            <div class="relative group py-2">
+                <button class="flex items-center gap-1 hover:text-purple-600 transition-colors uppercase font-bold focus:outline-none">
                     CONVERT PDF
                     <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 hidden group-hover:block hover:block animate-fade-in z-50">
-                    <div class="grid grid-cols-2 gap-6 text-left normal-case">
+                <div class="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] hidden group-hover:block hover:block animate-fade-in z-50">
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid grid-cols-2 gap-6 text-left normal-case">
                         <div>
                             <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
                             <div class="space-y-2">
@@ -46,7 +46,7 @@
                                 <a href="#/tool/word-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
                                     <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> WORD to PDF
                                 </a>
-                                <a href="#/tool/powerpoint-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                <a href="#/tool/ppt-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
                                     <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> POWERPOINT to PDF
                                 </a>
                                 <a href="#/tool/excel-to-pdf" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
@@ -66,7 +66,7 @@
                                 <a href="#/tool/pdf-to-word" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
                                     <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px]">DOC</span> PDF to WORD
                                 </a>
-                                <a href="#/tool/pdf-to-powerpoint" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                <a href="#/tool/pdf-to-ppt" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
                                     <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[10px]">PPT</span> PDF to POWERPOINT
                                 </a>
                                 <a href="#/tool/pdf-to-excel" class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
@@ -82,82 +82,154 @@
             </div>
 
             <!-- ALL PDF TOOLS Mega-Menu Dropdown -->
-            <div class="relative group">
-                <button class="flex items-center gap-1 py-2 text-purple-600 hover:text-purple-700 transition-colors uppercase font-extrabold focus:outline-none">
+            <div class="relative group py-2">
+                <button class="flex items-center gap-1 text-purple-600 hover:text-purple-700 transition-colors uppercase font-extrabold focus:outline-none">
                     ALL PDF TOOLS
                     <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div class="fixed left-1/2 -translate-x-1/2 top-16 w-[1100px] max-w-[95vw] bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 hidden group-hover:block hover:block animate-fade-in z-50 max-h-[85vh] overflow-y-auto">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-left normal-case">
+                <div class="absolute right-0 lg:left-1/2 lg:-translate-x-1/2 top-full pt-2 w-[1240px] max-w-[96vw] hidden group-hover:block hover:block animate-fade-in z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
+                    <div class="bg-white border border-slate-200 rounded-3xl shadow-2xl p-7 max-h-[88vh] overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5 text-left normal-case">
                         <!-- ORGANIZE PDF -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-red-500 uppercase tracking-wider mb-3">ORGANIZE PDF</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/merge-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Merge PDF</a>
-                                <a href="#/tool/split-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Split PDF</a>
-                                <a href="#/tool/remove-pages" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Remove pages</a>
-                                <a href="#/tool/extract-pages" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Extract pages</a>
-                                <a href="#/tool/organize-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Organize PDF</a>
-                                <a href="#/tool/scan-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Scan to PDF</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                ORGANIZE PDF
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/merge-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-red-50 text-red-500 flex items-center justify-center font-bold text-[9px]">🧩</span> Merge PDF
+                                </a>
+                                <a href="#/tool/split-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">✂️</span> Split PDF
+                                </a>
+                                <a href="#/tool/remove-pages" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-[9px]">❌</span> Remove pages
+                                </a>
+                                <a href="#/tool/extract-pages" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">📤</span> Extract pages
+                                </a>
+                                <a href="#/tool/organize-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🗂️</span> Organize PDF
+                                </a>
+                                <a href="#/tool/scan-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-[9px]">📷</span> Scan to PDF
+                                </a>
                             </div>
                         </div>
 
                         <!-- OPTIMIZE PDF -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-green-600 uppercase tracking-wider mb-3">OPTIMIZE PDF</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/compress-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Compress PDF</a>
-                                <a href="#/tool/repair-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Repair PDF</a>
-                                <a href="#/tool/ocr-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">OCR PDF</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                OPTIMIZE PDF
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/compress-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">📉</span> Compress PDF
+                                </a>
+                                <a href="#/tool/repair-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-green-50 text-green-600 flex items-center justify-center font-bold text-[9px]">🛠️</span> Repair PDF
+                                </a>
+                                <a href="#/tool/ocr-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-lime-50 text-lime-700 flex items-center justify-center font-bold text-[9px]">🔍</span> OCR PDF
+                                </a>
                             </div>
                         </div>
 
                         <!-- CONVERT TO PDF -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/jpg-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">JPG to PDF</a>
-                                <a href="#/tool/word-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">WORD to PDF</a>
-                                <a href="#/tool/powerpoint-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">POWERPOINT to PDF</a>
-                                <a href="#/tool/excel-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">EXCEL to PDF</a>
-                                <a href="#/tool/html-to-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">HTML to PDF</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                CONVERT TO PDF
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/jpg-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">🖼️</span> JPG to PDF
+                                </a>
+                                <a href="#/tool/word-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">DOC</span> WORD to PDF
+                                </a>
+                                <a href="#/tool/ppt-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">PPT</span> POWERPOINT to PDF
+                                </a>
+                                <a href="#/tool/excel-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">XLS</span> EXCEL to PDF
+                                </a>
+                                <a href="#/tool/html-to-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🌐</span> HTML to PDF
+                                </a>
                             </div>
                         </div>
 
                         <!-- CONVERT FROM PDF -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-blue-600 uppercase tracking-wider mb-3">CONVERT FROM PDF</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/pdf-to-jpg" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to JPG</a>
-                                <a href="#/tool/pdf-to-word" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to WORD</a>
-                                <a href="#/tool/pdf-to-powerpoint" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to POWERPOINT</a>
-                                <a href="#/tool/pdf-to-excel" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to EXCEL</a>
-                                <a href="#/tool/pdf-to-pdfa" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF to PDF/A</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                CONVERT FROM PDF
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/pdf-to-jpg" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-[9px]">🖼️</span> PDF to JPG
+                                </a>
+                                <a href="#/tool/pdf-to-word" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">DOC</span> PDF to WORD
+                                </a>
+                                <a href="#/tool/pdf-to-ppt" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-[9px]">PPT</span> PDF to POWERPOINT
+                                </a>
+                                <a href="#/tool/pdf-to-excel" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-[9px]">XLS</span> PDF to EXCEL
+                                </a>
+                                <a href="#/tool/pdf-to-pdfa" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[9px]">PDFA</span> PDF to PDF/A
+                                </a>
                             </div>
                         </div>
 
                         <!-- EDIT PDF -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-purple-600 uppercase tracking-wider mb-3">EDIT PDF</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/rotate-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Rotate PDF</a>
-                                <a href="#/tool/add-page-numbers" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Add page numbers</a>
-                                <a href="#/tool/add-watermark" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Add watermark</a>
-                                <a href="#/tool/crop-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Crop PDF</a>
-                                <a href="#/tool/edit-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Edit PDF</a>
-                                <a href="#/tool/pdf-forms" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">PDF Forms</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                EDIT PDF
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/rotate-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">🔄</span> Rotate PDF
+                                </a>
+                                <a href="#/tool/add-page-numbers" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-[9px]">🔢</span> Add page numbers
+                                </a>
+                                <a href="#/tool/add-watermark" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center font-bold text-[9px]">💧</span> Add watermark
+                                </a>
+                                <a href="#/tool/crop-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-[9px]">✂️</span> Crop PDF
+                                </a>
+                                <a href="#/tool/edit-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-[9px]">✏️</span> Edit PDF
+                                </a>
+                                <a href="#/tool/pdf-forms" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-[9px]">📋</span> PDF Forms
+                                </a>
                             </div>
                         </div>
 
                         <!-- PDF SECURITY -->
                         <div>
-                            <h4 class="text-[11px] font-extrabold text-indigo-600 uppercase tracking-wider mb-3">PDF SECURITY</h4>
-                            <div class="space-y-1.5">
-                                <a href="#/tool/unlock-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Unlock PDF</a>
-                                <a href="#/tool/protect-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Protect PDF</a>
-                                <a href="#/tool/sign-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Sign PDF</a>
-                                <a href="#/tool/redact-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Redact PDF</a>
-                                <a href="#/tool/compare-pdf" class="block p-1.5 rounded-lg hover:bg-slate-50 text-xs font-semibold text-slate-800 hover:text-purple-600">Compare PDF</a>
+                            <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                PDF SECURITY
+                            </h4>
+                            <div class="space-y-1">
+                                <a href="#/tool/unlock-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-[9px]">🔓</span> Unlock PDF
+                                </a>
+                                <a href="#/tool/protect-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[9px]">🛡️</span> Protect PDF
+                                </a>
+                                <a href="#/tool/sign-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-[9px]">✍️</span> Sign PDF
+                                </a>
+                                <a href="#/tool/redact-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-[9px]">⬛</span> Redact PDF
+                                </a>
+                                <a href="#/tool/compare-pdf" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-800 hover:text-purple-600">
+                                    <span class="w-6 h-6 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-[9px]">📊</span> Compare PDF
+                                </a>
                             </div>
                         </div>
                     </div>

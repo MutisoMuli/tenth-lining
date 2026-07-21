@@ -34,6 +34,10 @@ Route::post('/api/tool/split/process/{id}', [\App\Http\Controllers\SplitPdfContr
 Route::post('/api/tool/compress/upload', [\App\Http\Controllers\CompressPdfController::class, 'upload'])->name('api.compress.upload');
 Route::post('/api/tool/compress/process/{id}', [\App\Http\Controllers\CompressPdfController::class, 'process'])->name('api.compress.process');
 
+// Convert PDF Tool Routes
+Route::post('/api/tool/convert/upload', [\App\Http\Controllers\ConvertPdfController::class, 'upload'])->name('api.convert.upload');
+Route::post('/api/tool/convert/process/{id}', [\App\Http\Controllers\ConvertPdfController::class, 'process'])->name('api.convert.process');
+
 // PDF preview (serves file)
 Route::get('/preview/{id}', [DocumentController::class, 'preview'])->name('document.preview');
 
@@ -88,8 +92,17 @@ Route::delete('/api/document/{id}', function (string $id) {
 Route::post('/payment/initiate', [PaymentController::class, 'initiate'])->name('payment.initiate');
 Route::get('/payment/status/{checkoutRequestId}', [PaymentController::class, 'status'])->name('payment.status');
 
-// M-Pesa callback (no CSRF)
-Route::post('/api/mpesa/callback', [PaymentController::class, 'callback'])->name('mpesa.callback')->withoutMiddleware(['web']);
+// Tool APIs (Merge, Split, Compress, Convert, Organize)
+Route::post('/api/tool/merge/upload', [\App\Http\Controllers\MergePdfController::class, 'upload']);
+Route::post('/api/tool/merge/process/{id}', [\App\Http\Controllers\MergePdfController::class, 'process']);
+Route::post('/api/tool/split/upload', [\App\Http\Controllers\SplitPdfController::class, 'upload']);
+Route::post('/api/tool/split/process/{id}', [\App\Http\Controllers\SplitPdfController::class, 'process']);
+Route::post('/api/tool/compress/upload', [\App\Http\Controllers\CompressPdfController::class, 'upload']);
+Route::post('/api/tool/compress/process/{id}', [\App\Http\Controllers\CompressPdfController::class, 'process']);
+Route::post('/api/tool/convert/upload', [\App\Http\Controllers\ConvertPdfController::class, 'upload']);
+Route::post('/api/tool/convert/process/{id}', [\App\Http\Controllers\ConvertPdfController::class, 'process']);
+Route::post('/api/tool/organize/upload', [\App\Http\Controllers\OrganizePdfController::class, 'upload']);
+Route::post('/api/tool/organize/process/{id}', [\App\Http\Controllers\OrganizePdfController::class, 'process']);
 
 // ─── SPA Catch-All (must be LAST) ─────────────────────
 // Serves the SPA shell for all page navigation
