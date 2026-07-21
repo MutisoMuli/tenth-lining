@@ -59,7 +59,7 @@ class DocumentController extends Controller
         }
 
         // Create document record
-        $document = Document::create([
+        $document = Document::safeCreate([
             'user_id' => auth()->id(),
             'original_name' => $originalName,
             'original_path' => $storedPath,

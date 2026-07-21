@@ -30,6 +30,10 @@ Route::post('/api/tool/merge/process/{id}', [\App\Http\Controllers\MergePdfContr
 Route::post('/api/tool/split/upload', [\App\Http\Controllers\SplitPdfController::class, 'upload'])->name('api.split.upload');
 Route::post('/api/tool/split/process/{id}', [\App\Http\Controllers\SplitPdfController::class, 'process'])->name('api.split.process');
 
+// Compress PDF Tool Routes
+Route::post('/api/tool/compress/upload', [\App\Http\Controllers\CompressPdfController::class, 'upload'])->name('api.compress.upload');
+Route::post('/api/tool/compress/process/{id}', [\App\Http\Controllers\CompressPdfController::class, 'process'])->name('api.compress.process');
+
 // PDF preview (serves file)
 Route::get('/preview/{id}', [DocumentController::class, 'preview'])->name('document.preview');
 
@@ -45,6 +49,10 @@ Route::get('/document/{id}/download', [DocumentController::class, 'download'])->
 // Document metadata API (returns JSON for editor)
 Route::get('/api/document/{id}', function (string $id) {
     $document = Document::findOrFail($id);
+    $isTenthLining = ($document->tool_type === 'tenth-lining') || 
+                     (empty($document->tool_type) && !empty($document->tenth_line_settings));
+    $pricePerPage = $isTenthLining ? 3 : 1;
+
     return response()->json([
         'id' => $document->id,
         'original_name' => $document->original_name,
@@ -56,8 +64,8 @@ Route::get('/api/document/{id}', function (string $id) {
         'tenth_line_settings' => $document->tenth_line_settings ?? [],
         'preview_url' => route('document.preview', $document->id),
         'tool_type' => $document->tool_type ?? 'tenth-lining',
-        'rate' => ($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1,
-        'cost' => $document->page_count * (($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1),
+        'rate' => $pricePerPage,
+        'cost' => $document->page_count * $pricePerPage,
     ]);
 })->name('api.document');
 

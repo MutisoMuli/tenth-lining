@@ -70,7 +70,7 @@ class MergePdfController extends Controller
             }
 
             // Create document record representing the merge task
-            $document = Document::create([
+            $document = Document::safeCreate([
                 'user_id' => auth()->id(),
                 'original_name' => 'Merged Document (' . count($fileList) . ' files).pdf',
                 'original_path' => $fileList[0]['path'] ?? '',

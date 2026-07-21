@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Services\PdfCompressionService;
 use App\Services\PdfFormattingService;
-use App\Services\PdfSplitService;
 use App\Services\WordToPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class SplitPdfController extends Controller
+class CompressPdfController extends Controller
 {
     /**
-     * Upload a PDF document for splitting.
+     * Upload a PDF or Word document for compression.
      */
     public function upload(Request $request)
     {
@@ -45,8 +45,10 @@ class SplitPdfController extends Controller
             $pageCount = $formatter->getPageCount($fullPath);
 
             if ($pageCount === 0) {
-                return response()->json(['success' => false, 'error' => 'Unable to read the PDF. The file may be corrupted.'], 400);
+                return response()->json(['success' => false, 'error' => 'Unable to read the document. The file may be corrupted.'], 400);
             }
+
+            $fileSize = filesize($fullPath);
 
             // Create document record
             $document = Document::safeCreate([
@@ -54,10 +56,10 @@ class SplitPdfController extends Controller
                 'original_name' => $originalName,
                 'original_path' => $storedPath,
                 'page_count' => $pageCount,
-                'file_size' => filesize($fullPath),
+                'file_size' => $fileSize,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
-                'tool_type' => 'split-pdf',
+                'tool_type' => 'compress-pdf',
             ]);
 
             return response()->json([
@@ -66,24 +68,24 @@ class SplitPdfController extends Controller
                 'original_name' => $document->original_name,
                 'page_count' => $document->page_count,
                 'file_size' => $document->file_size,
-                'rate' => 1, // KES 1 per page for split tool
+                'rate' => 1, // KES 1 per page for compression tool
                 'cost' => $document->page_count * 1,
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Split upload error', ['error' => $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('Compress upload error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'error' => 'Failed to process document: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Process PDF split after payment verification.
+     * Process PDF compression after payment verification.
      */
     public function process(Request $request, string $id)
     {
         $document = Document::findOrFail($id);
 
         if ($document->payment_status !== 'paid') {
-            return response()->json(['error' => 'Payment required before processing split.'], 402);
+            return response()->json(['error' => 'Payment required before processing compression.'], 402);
         }
 
         $inputPath = storage_path('app/private/' . $document->original_path);
@@ -91,47 +93,35 @@ class SplitPdfController extends Controller
             return response()->json(['error' => 'Original document file not found.'], 404);
         }
 
-        $mode = $request->input('mode', 'ranges'); // 'ranges', 'all', 'extract'
-        $sessionFolder = 'documents/formatted/' . Str::uuid();
-        $outputDir = storage_path('app/private/' . $sessionFolder);
+        $quality = $request->input('quality', 'medium'); // 'extreme' / 'low', 'medium' / 'recommended', 'high' / 'less'
+        $outputFilename = 'documents/formatted/' . Str::uuid() . '.pdf';
+        $outputPath = storage_path('app/private/' . $outputFilename);
 
-        $splitService = new PdfSplitService();
-        $resultPath = null;
+        $compressService = new PdfCompressionService();
+        $success = $compressService->compress($inputPath, $outputPath, $quality);
 
-        if ($mode === 'all') {
-            $resultPath = $splitService->extractAllPages($inputPath, $outputDir);
-        } elseif ($mode === 'extract') {
-            $pages = $request->input('pages', []);
-            $resultPath = $splitService->extractPages($inputPath, $pages, $outputDir);
-        } else {
-            // Default: custom ranges
-            $ranges = $request->input('ranges', []);
-            if (empty($ranges)) {
-                // Default split in half
-                $mid = max(1, (int)ceil($document->page_count / 2));
-                $ranges = [
-                    ['from' => 1, 'to' => $mid],
-                    ['from' => min($document->page_count, $mid + 1), 'to' => $document->page_count]
-                ];
-            }
-            $resultPath = $splitService->splitByRanges($inputPath, $ranges, $outputDir);
+        if (!$success || !file_exists($outputPath)) {
+            return response()->json(['error' => 'Failed to compress PDF document.'], 500);
         }
 
-        if (!$resultPath || !file_exists($resultPath)) {
-            return response()->json(['error' => 'Failed to split PDF document.'], 500);
-        }
-
-        $relativeOutputPath = $sessionFolder . '/' . basename($resultPath);
+        $originalSize = $document->file_size;
+        $compressedSize = filesize($outputPath);
+        $savedBytes = max(0, $originalSize - $compressedSize);
+        $savedPercent = $originalSize > 0 ? round(($savedBytes / $originalSize) * 100) : 0;
 
         $document->update([
-            'formatted_path' => $relativeOutputPath,
+            'formatted_path' => $outputFilename,
             'status' => 'completed',
-            'compressed_size' => filesize($resultPath),
+            'compressed_size' => $compressedSize,
         ]);
 
         return response()->json([
             'success' => true,
             'download_url' => route('document.download', $document->id),
+            'original_size' => $originalSize,
+            'compressed_size' => $compressedSize,
+            'saved_bytes' => $savedBytes,
+            'saved_percent' => $savedPercent,
         ]);
     }
 }

@@ -22,7 +22,9 @@ class PaymentController extends Controller
         ]);
 
         $document = Document::findOrFail($request->document_id);
-        $pricePerPage = ($document->tool_type === 'tenth-lining' || !$document->tool_type) ? 3 : 1;
+        $isTenthLining = ($document->tool_type === 'tenth-lining') || 
+                         (empty($document->tool_type) && !empty($document->tenth_line_settings));
+        $pricePerPage = $isTenthLining ? 3 : 1;
         $amount = $document->page_count * $pricePerPage;
 
         $response = $mpesa->stkPush(

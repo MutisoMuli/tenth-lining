@@ -32,6 +32,14 @@ class Document extends Model
         'tenth_line_settings' => 'array',
     ];
 
+    public static function safeCreate(array $attributes): self
+    {
+        if (isset($attributes['tool_type']) && !\Illuminate\Support\Facades\Schema::hasColumn('documents', 'tool_type')) {
+            unset($attributes['tool_type']);
+        }
+        return static::create($attributes);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

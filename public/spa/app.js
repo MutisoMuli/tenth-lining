@@ -153,6 +153,11 @@ class App {
             return;
         }
 
+        if (hash === '#/tool/compress-pdf') {
+            this.renderCompressPdfTool();
+            return;
+        }
+
         const routeHandler = this.routes[hash] || this.routes['#/'];
         routeHandler();
     }
@@ -3321,8 +3326,451 @@ class App {
             uploadZone.classList.remove('hidden');
         });
     }
+
+    // ─── VIEW 6: COMPRESS PDF TOOL ──────────────────────────────
+    renderCompressPdfTool() {
+        this.appEl.innerHTML = `
+            <!-- Navigation -->
+            <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80">
+                <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                    <a href="#/" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center font-black text-white text-lg shadow-md shadow-purple-500/20">T</div>
+                        <div>
+                            <span class="font-bold text-lg text-slate-900 tracking-tight block leading-tight">Tenth Lining</span>
+                            <span class="text-[9px] block text-purple-600 tracking-widest uppercase font-bold">by Bizlyn Systems</span>
+                        </div>
+                    </a>
+
+                    <div class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <a href="#/tool/merge-pdf" class="hover:text-purple-600 transition-colors py-2">MERGE PDF</a>
+                        <a href="#/tool/split-pdf" class="hover:text-purple-600 transition-colors py-2">SPLIT PDF</a>
+                        <a href="#/tool/compress-pdf" class="text-purple-600 transition-colors py-2 font-black">COMPRESS PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">CONVERT PDF</a>
+                        <a href="#/" class="hover:text-purple-600 transition-colors py-2">ALL PDF TOOLS</a>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="#/dashboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-purple-500/20">Dashboard</a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Container -->
+            <main class="min-h-screen pt-28 pb-20 bg-slate-50 flex flex-col justify-center">
+                <div class="max-w-4xl mx-auto px-6 w-full text-center">
+                    
+                    <!-- Header Title -->
+                    <div class="mb-10 animate-fade-in">
+                        <div class="w-16 h-16 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mx-auto mb-4 border border-green-100 shadow-sm">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                        </div>
+                        <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Compress PDF File</h1>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Reduce file size while optimizing for maximal quality. Ideal for court filing compliance (25MB limit). KES 1 per page via M-Pesa.</p>
+                    </div>
+
+                    <!-- STEP 1: Upload Zone -->
+                    <div id="compress-upload-zone" class="max-w-xl mx-auto">
+                        <label id="compress-drop-area" class="group relative block cursor-pointer">
+                            <div class="border-2 border-dashed border-slate-300 hover:border-green-500 rounded-3xl p-12 transition-all duration-300 bg-white hover:bg-green-50/20 shadow-sm hover:shadow-xl">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-20 h-20 rounded-2xl bg-green-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 text-green-600">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-800 font-bold text-xl mb-1">Select PDF file to compress</p>
+                                        <p class="text-slate-500 text-sm">or drop PDF here · PDF, DOC, DOCX up to 100MB</p>
+                                    </div>
+                                </div>
+                                <input type="file" id="compress-file-input" class="hidden" accept=".pdf,.doc,.docx">
+                            </div>
+                        </label>
+
+                        <div id="compress-upload-loading" class="hidden mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-lg text-center">
+                            <div class="w-10 h-10 border-3 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p class="text-slate-800 font-bold text-sm">Uploading and inspecting file...</p>
+                            <p class="text-slate-500 text-xs mt-1">Analyzing pages and file size</p>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: Compression Settings & Summary Zone -->
+                    <div id="compress-config-zone" class="hidden max-w-3xl mx-auto text-left animate-fade-in">
+                        <div class="grid md:grid-cols-3 gap-6 items-start">
+                            
+                            <!-- Left: Quality Selection Cards -->
+                            <div class="md:col-span-2 space-y-4">
+                                <h3 class="text-slate-900 font-extrabold text-base">Select Compression Level</h3>
+
+                                <div class="space-y-3">
+                                    <!-- Recommended -->
+                                    <label class="block cursor-pointer">
+                                        <input type="radio" name="compress-quality" value="medium" checked class="peer hidden">
+                                        <div class="p-5 bg-white border-2 border-slate-200 peer-checked:border-green-500 peer-checked:bg-green-50/10 rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-between">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="font-extrabold text-slate-900 text-sm">Recommended Compression</span>
+                                                    <span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">Optimal</span>
+                                                </div>
+                                                <p class="text-xs text-slate-500">Good quality, optimal file size reduction. Best for most court filings.</p>
+                                            </div>
+                                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 flex-shrink-0"></div>
+                                        </div>
+                                    </label>
+
+                                    <!-- Extreme -->
+                                    <label class="block cursor-pointer">
+                                        <input type="radio" name="compress-quality" value="low" class="peer hidden">
+                                        <div class="p-5 bg-white border-2 border-slate-200 peer-checked:border-green-500 peer-checked:bg-green-50/10 rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-between">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="font-extrabold text-slate-900 text-sm">Extreme Compression</span>
+                                                    <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">Max Reduction</span>
+                                                </div>
+                                                <p class="text-xs text-slate-500">Maximum size reduction, lower image resolution. Ideal for files > 25MB.</p>
+                                            </div>
+                                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 flex-shrink-0"></div>
+                                        </div>
+                                    </label>
+
+                                    <!-- Less Compression -->
+                                    <label class="block cursor-pointer">
+                                        <input type="radio" name="compress-quality" value="high" class="peer hidden">
+                                        <div class="p-5 bg-white border-2 border-slate-200 peer-checked:border-green-500 peer-checked:bg-green-50/10 rounded-2xl transition-all shadow-sm hover:shadow-md flex items-center justify-between">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="font-extrabold text-slate-900 text-sm">Less Compression</span>
+                                                    <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">High Quality</span>
+                                                </div>
+                                                <p class="text-xs text-slate-500">High visual quality, minor file size reduction.</p>
+                                            </div>
+                                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-500 flex-shrink-0"></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Right: Summary Card & Pay Button -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-5 sticky top-28">
+                                <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">Compression Summary</h4>
+
+                                <div class="space-y-2.5 text-xs text-slate-600">
+                                    <div>
+                                        <span class="block text-slate-400 font-medium text-[10px] uppercase">Document</span>
+                                        <strong id="compress-filename" class="text-slate-900 font-bold block truncate">Document.pdf</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Original Size</span>
+                                        <strong id="compress-orig-size" class="text-slate-900">0 MB</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Total Pages</span>
+                                        <strong id="compress-total-pages" class="text-slate-900">0 pages</strong>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price Rate</span>
+                                        <strong class="text-emerald-600">KES 1.00 / page</strong>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-slate-150 pt-3 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount</span>
+                                    <span id="compress-total-cost" class="text-xl font-black text-slate-900">KES 0</span>
+                                </div>
+
+                                <button id="btn-compress-pay" class="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Compress PDF & Pay
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Success Download Zone -->
+                    <div id="compress-success-zone" class="hidden max-w-lg mx-auto bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl animate-fade-in text-center">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-3 border border-emerald-200">
+                            🎉 Your PDF is <span id="compress-badge-percent">0%</span> smaller!
+                        </div>
+
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Compression Complete</h3>
+                        <p class="text-slate-500 text-xs mb-6">Reduced from <span id="compress-stat-orig" class="font-bold text-slate-700">0 MB</span> to <span id="compress-stat-new" class="font-bold text-emerald-600">0 MB</span>.</p>
+                        
+                        <a id="btn-download-compressed" href="#" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mb-4">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download Compressed PDF
+                        </a>
+
+                        <button id="btn-compress-another" class="text-xs text-slate-500 hover:text-slate-800 font-semibold transition-colors">Compress Another Document</button>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- PAYMENT MODAL -->
+            <div id="compress-payment-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" id="compress-modal-backdrop"></div>
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="relative bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl text-slate-800">
+                        <button class="absolute top-4 right-4 text-slate-400 hover:text-slate-800" id="compress-modal-close">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+
+                        <div class="text-center mb-6">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-700/10 flex items-center justify-center mx-auto mb-3 text-green-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <h3 class="text-slate-900 font-extrabold text-lg">M-Pesa Payment</h3>
+                            <p class="text-slate-500 text-xs mt-1">Compress PDF Tool · <span id="compress-modal-amount" class="font-bold text-slate-800">KES 0</span></p>
+                        </div>
+
+                        <!-- Step 1: Phone input -->
+                        <div id="compress-step-phone">
+                            <label class="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Enter Phone Number</label>
+                            <input type="tel" id="compress-phone-input" placeholder="0712345678" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center text-xl font-bold tracking-widest focus:border-green-500 focus:outline-none mb-4" maxlength="13">
+                            <button id="btn-compress-stk-submit" class="w-full py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-green-500/10">
+                                Initiate M-Pesa Payment
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Waiting -->
+                        <div id="compress-step-waiting" class="hidden text-center py-6">
+                            <div class="w-12 h-12 border-3 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-slate-800 font-bold mb-1">Sending STK Push Prompt...</p>
+                            <p class="text-slate-500 text-xs">Please check your phone and enter your M-Pesa PIN to complete payment.</p>
+                        </div>
+
+                        <!-- Step 3: Failed -->
+                        <div id="compress-step-failed" class="hidden text-center py-4">
+                            <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-200 text-red-600">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </div>
+                            <p class="text-slate-800 font-bold text-base mb-1">Payment Failed</p>
+                            <p id="compress-failed-msg" class="text-slate-500 text-xs mb-5"></p>
+                            <button id="btn-compress-retry" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors">Retry Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ─── COMPRESS CONTROLLER LOGIC ──────────────────────────
+        let currentCompressState = {
+            documentId: null,
+            originalName: '',
+            fileSize: 0,
+            totalPages: 0,
+            totalCost: 0,
+            paymentPollingInterval: null,
+        };
+
+        const fileInput = document.getElementById('compress-file-input');
+        const uploadZone = document.getElementById('compress-upload-zone');
+        const uploadLoading = document.getElementById('compress-upload-loading');
+        const configZone = document.getElementById('compress-config-zone');
+        const successZone = document.getElementById('compress-success-zone');
+
+        const paymentModal = document.getElementById('compress-payment-modal');
+        const btnPay = document.getElementById('btn-compress-pay');
+        const btnStkSubmit = document.getElementById('btn-compress-stk-submit');
+
+        const handleCompressFileUpload = async (file) => {
+            if (!file) return;
+
+            uploadLoading.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/api/tool/compress/upload`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': config.csrfToken },
+                    body: formData,
+                });
+
+                let result = {};
+                try { result = await resp.json(); } catch(e) {}
+
+                uploadLoading.classList.add('hidden');
+
+                if (resp.ok && result.success) {
+                    currentCompressState.documentId = result.document_id;
+                    currentCompressState.originalName = result.original_name;
+                    currentCompressState.fileSize = result.file_size;
+                    currentCompressState.totalPages = result.page_count;
+                    currentCompressState.totalCost = result.cost;
+
+                    renderCompressConfigState();
+                } else {
+                    alert(result.error || 'Failed to upload PDF for compression.');
+                }
+            } catch (e) {
+                uploadLoading.classList.add('hidden');
+                alert('Upload request failed: ' + e.message);
+            }
+        };
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleCompressFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Drag & Drop
+        const dropArea = document.getElementById('compress-drop-area');
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.add('border-green-500', 'bg-green-50/20');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                dropArea.firstElementChild.classList.remove('border-green-500', 'bg-green-50/20');
+            });
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                handleCompressFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        const renderCompressConfigState = () => {
+            uploadZone.classList.add('hidden');
+            configZone.classList.remove('hidden');
+
+            const mbSize = (currentCompressState.fileSize / (1024 * 1024)).toFixed(2);
+            document.getElementById('compress-filename').textContent = currentCompressState.originalName;
+            document.getElementById('compress-orig-size').textContent = `${mbSize} MB`;
+            document.getElementById('compress-total-pages').textContent = `${currentCompressState.totalPages} pages`;
+            document.getElementById('compress-total-cost').textContent = `KES ${currentCompressState.totalCost}`;
+            document.getElementById('compress-modal-amount').textContent = `KES ${currentCompressState.totalCost}`;
+        };
+
+        // Payment logic
+        btnPay.addEventListener('click', () => {
+            document.getElementById('compress-step-phone').classList.remove('hidden');
+            document.getElementById('compress-step-waiting').classList.add('hidden');
+            document.getElementById('compress-step-failed').classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+        });
+
+        document.getElementById('compress-modal-close').addEventListener('click', () => paymentModal.classList.add('hidden'));
+        document.getElementById('compress-modal-backdrop').addEventListener('click', () => paymentModal.classList.add('hidden'));
+
+        btnStkSubmit.addEventListener('click', async () => {
+            const phone = document.getElementById('compress-phone-input').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid M-Pesa phone number.');
+                return;
+            }
+
+            document.getElementById('compress-step-phone').classList.add('hidden');
+            document.getElementById('compress-step-waiting').classList.remove('hidden');
+
+            try {
+                const resp = await fetch(`${config.baseUrl}/payment/initiate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ document_id: currentCompressState.documentId, phone: phone }),
+                });
+                const result = await resp.json();
+
+                if (result.success && result.checkout_request_id) {
+                    startCompressPaymentPolling(result.checkout_request_id);
+                } else {
+                    showCompressPaymentFailed(result.message || 'Failed to initiate M-Pesa payment.');
+                }
+            } catch (e) {
+                showCompressPaymentFailed('Network connection error. Please try again.');
+            }
+        });
+
+        const startCompressPaymentPolling = (checkoutRequestId) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 30;
+
+            if (currentCompressState.paymentPollingInterval) clearInterval(currentCompressState.paymentPollingInterval);
+
+            currentCompressState.paymentPollingInterval = setInterval(async () => {
+                pollAttempts++;
+                try {
+                    const resp = await fetch(`${config.baseUrl}/payment/status/${checkoutRequestId}`);
+                    const result = await resp.json();
+
+                    if (result.status === 'completed') {
+                        clearInterval(currentCompressState.paymentPollingInterval);
+                        executeCompressProcess();
+                    } else if (result.status === 'failed') {
+                        clearInterval(currentCompressState.paymentPollingInterval);
+                        showCompressPaymentFailed('M-Pesa payment failed or was cancelled.');
+                    }
+                } catch (e) {}
+
+                if (pollAttempts >= maxPollAttempts) {
+                    clearInterval(currentCompressState.paymentPollingInterval);
+                    showCompressPaymentFailed('M-Pesa payment timeout. Please retry.');
+                }
+            }, 2000);
+        };
+
+        const showCompressPaymentFailed = (msg) => {
+            document.getElementById('compress-step-waiting').classList.add('hidden');
+            document.getElementById('compress-step-failed').classList.remove('hidden');
+            document.getElementById('compress-failed-msg').textContent = msg;
+        };
+
+        document.getElementById('btn-compress-retry').addEventListener('click', () => {
+            document.getElementById('compress-step-failed').classList.add('hidden');
+            document.getElementById('compress-step-phone').classList.remove('hidden');
+        });
+
+        const executeCompressProcess = async () => {
+            try {
+                const selectedQuality = document.querySelector('input[name="compress-quality"]:checked')?.value || 'medium';
+
+                const resp = await fetch(`${config.baseUrl}/api/tool/compress/process/${currentCompressState.documentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrfToken },
+                    body: JSON.stringify({ quality: selectedQuality }),
+                });
+                const result = await resp.json();
+
+                paymentModal.classList.add('hidden');
+
+                if (result.success && result.download_url) {
+                    configZone.classList.add('hidden');
+                    successZone.classList.remove('hidden');
+
+                    const origMb = (result.original_size / (1024 * 1024)).toFixed(2);
+                    const newMb = (result.compressed_size / (1024 * 1024)).toFixed(2);
+                    document.getElementById('compress-badge-percent').textContent = `${result.saved_percent}%`;
+                    document.getElementById('compress-stat-orig').textContent = `${origMb} MB`;
+                    document.getElementById('compress-stat-new').textContent = `${newMb} MB`;
+                    document.getElementById('btn-download-compressed').href = result.download_url;
+                } else {
+                    alert(result.error || 'Failed to compress PDF.');
+                }
+            } catch (e) {
+                paymentModal.classList.add('hidden');
+                alert('Error processing compression. Please try again.');
+            }
+        };
+
+        document.getElementById('btn-compress-another').addEventListener('click', () => {
+            currentCompressState = { documentId: null, originalName: '', fileSize: 0, totalPages: 0, totalCost: 0, paymentPollingInterval: null };
+            successZone.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+        });
+    }
 }
 
 new App();
+
 
 
