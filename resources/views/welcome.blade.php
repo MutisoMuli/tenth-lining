@@ -418,11 +418,11 @@
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-4">
                         All PDF Tools
                     </div>
-                    <div class="text-5xl font-black text-slate-900 mb-1">KES 1 <span class="text-lg font-semibold text-slate-500">/ page</span></div>
-                    <p class="text-xs text-slate-500 mb-6 font-medium">1 shilling per page payment via M-Pesa</p>
+                    <div class="text-5xl font-black text-emerald-600 mb-1">FREE</div>
+                    <p class="text-xs text-slate-500 mb-6 font-medium">100% Free for all PDF tools</p>
 
                     <div class="space-y-3 text-sm mb-8">
-                        @foreach(['Convert PDF (Word, Excel, PPT, JPG, HTML)', 'Merge & Split PDF', 'Compress & Repair PDF', 'Edit, Rotate & Watermark PDF', 'Protect, Unlock & Sign PDF', 'Instant M-Pesa Download'] as $feature)
+                        @foreach(['Convert PDF (Word, Excel, PPT, JPG, HTML)', 'Merge & Split PDF', 'Compress & Repair PDF', 'Edit, Rotate & Watermark PDF', 'Protect, Unlock & Sign PDF', 'Instant Direct Download'] as $feature)
                         <div class="flex items-center gap-3 text-slate-600 font-medium">
                             <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                             {{ $feature }}
@@ -431,7 +431,7 @@
                     </div>
                 </div>
                 <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 text-center">
-                    <span class="text-slate-800 font-bold">Example:</span> 50 pages × KES 1 = <span class="text-emerald-600 font-black">KES 50</span>
+                    <span class="text-slate-800 font-bold">Pricing:</span> <span class="text-emerald-600 font-black">Free for all</span>
                 </div>
             </div>
 

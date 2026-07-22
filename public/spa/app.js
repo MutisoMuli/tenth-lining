@@ -2663,7 +2663,7 @@ class App {
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586A2 2 0 0116 3.586L19.414 7A2 2 0 0120 8.414V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Merge PDF Files</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">Combine multiple PDFs into a single unified document in the order you want. KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Combine multiple PDFs into a single unified document in the order you want. Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone (Visible when no files uploaded) -->
@@ -3034,7 +3034,7 @@ class App {
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Split PDF Document</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">Extract specific pages or split your PDF into custom page range segments. KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Extract specific pages or split your PDF into custom page range segments. Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone -->
@@ -3469,7 +3469,7 @@ class App {
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Compress PDF File</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">Reduce file size while optimizing for maximal quality. Ideal for court filing compliance (25MB limit). KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">Reduce file size while optimizing for maximal quality. Ideal for court filing compliance (25MB limit). Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone -->
@@ -3836,7 +3836,7 @@ class App {
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                             </div>
                             <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Every tool you need to work with PDFs in one place</h1>
-                            <p class="text-slate-500 text-base max-w-2xl mx-auto">Every tool 100% free & easy to use! Merge, split, compress, convert, rotate, unlock and watermark PDFs with just a few clicks. KES 1 per page via M-Pesa.</p>
+                            <p class="text-slate-500 text-base max-w-2xl mx-auto">Every tool 100% free & easy to use! Merge, split, compress, convert, rotate, unlock and watermark PDFs with just a few clicks. Free for all.</p>
                         </div>
 
                         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-6xl mx-auto">
@@ -3993,7 +3993,7 @@ class App {
                                 ← Back to all convert tools
                             </a>
                             <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
-                            <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc}. KES 1 per page via M-Pesa.</p>
+                            <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc}. Free for all.</p>
                         </div>
 
                         <!-- STEP 1: Upload Zone -->
@@ -4311,7 +4311,7 @@ class App {
                             ${activeTool.icon}
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone -->
@@ -4736,7 +4736,7 @@ class App {
                             ${activeTool.icon}
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone -->
@@ -5088,7 +5088,7 @@ class App {
                             ${activeTool.icon}
                         </div>
                         <h1 class="text-3xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">${activeTool.title}</h1>
-                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} KES 1 per page via M-Pesa.</p>
+                        <p class="text-slate-500 text-base max-w-xl mx-auto">${activeTool.desc} Free for all.</p>
                     </div>
 
                     <!-- STEP 1: Upload Zone -->
