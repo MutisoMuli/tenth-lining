@@ -255,8 +255,8 @@ class App {
                                 CONVERT PDF
                                 <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 hidden group-hover:block hover:block animate-fade-in z-50">
-                                <div class="grid grid-cols-2 gap-6 text-left normal-case">
+                            <div class="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[480px] hidden group-hover:block hover:block z-50 before:content-[''] before:absolute before:-top-6 before:left-0 before:right-0 before:h-8 before:block">
+                                <div class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid grid-cols-2 gap-6 text-left normal-case">
                                     <div>
                                         <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
                                         <div class="space-y-2">
@@ -307,8 +307,8 @@ class App {
                                 ALL PDF TOOLS
                                 <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div class="fixed left-1/2 -translate-x-1/2 top-16 w-[1100px] max-w-[95vw] bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 hidden group-hover:block hover:block animate-fade-in z-50 max-h-[85vh] overflow-y-auto">
-                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-left normal-case">
+                            <div class="absolute right-0 lg:left-1/2 lg:-translate-x-1/2 top-full pt-3 w-[1100px] max-w-[95vw] hidden group-hover:block hover:block z-50 max-h-[85vh] overflow-y-auto before:content-[''] before:absolute before:-top-6 before:left-0 before:right-0 before:h-8 before:block">
+                                <div class="bg-white border border-slate-200 rounded-3xl shadow-2xl p-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-left normal-case">
                                     <!-- ORGANIZE PDF -->
                                     <div>
                                         <h4 class="text-[11px] font-extrabold text-red-500 uppercase tracking-wider mb-3">ORGANIZE PDF</h4>
@@ -2450,7 +2450,7 @@ class App {
                                 CONVERT PDF
                                 <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </a>
-                            <div class="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] hidden group-hover:block hover:block animate-fade-in z-50">
+                            <div class="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[480px] hidden group-hover:block hover:block z-50 before:content-[''] before:absolute before:-top-6 before:left-0 before:right-0 before:h-8 before:block">
                                 <div class="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid grid-cols-2 gap-6 text-left normal-case">
                                     <div>
                                         <h4 class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-3">CONVERT TO PDF</h4>
@@ -2502,7 +2502,7 @@ class App {
                                 ALL PDF TOOLS
                                 <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                             </a>
-                            <div class="absolute right-0 lg:left-1/2 lg:-translate-x-1/2 top-full pt-2 w-[1240px] max-w-[96vw] hidden group-hover:block hover:block animate-fade-in z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
+                            <div class="absolute right-0 lg:left-1/2 lg:-translate-x-1/2 top-full pt-3 w-[1240px] max-w-[96vw] hidden group-hover:block hover:block z-50 before:content-[''] before:absolute before:-top-6 before:left-0 before:right-0 before:h-8 before:block">
                                 <div class="bg-white border border-slate-200 rounded-3xl shadow-2xl p-7 max-h-[88vh] overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5 text-left normal-case">
                                     <!-- ORGANIZE PDF -->
                                     <div>

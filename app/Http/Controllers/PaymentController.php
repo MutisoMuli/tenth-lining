@@ -154,13 +154,13 @@ class PaymentController extends Controller
                         // Payment successfully completed at Safaricom!
                         $mpesaReceiptNumber = $queryResult['MpesaReceiptNumber'] ?? $payment->mpesa_receipt_number;
                         if (empty($mpesaReceiptNumber)) {
-                            $mpesaReceiptNumber = 'QK' . strtoupper(Str::random(8));
+                            $mpesaReceiptNumber = 'MP' . strtoupper(Str::random(8));
                         }
 
                         $payment->update([
                             'status' => 'completed',
                             'mpesa_receipt_number' => $mpesaReceiptNumber,
-                            'result_desc' => $resultDesc,
+                            'result_desc' => $resultDesc ?: 'Completed',
                             'paid_at' => now(),
                         ]);
 
@@ -180,32 +180,23 @@ class PaymentController extends Controller
                             'checkout_request_id' => $checkoutRequestId,
                             'payment_id' => $payment->id,
                         ]);
-                    } elseif ($resultCode === '1032') {
-                        // 1032 = Explicitly Cancelled by user on phone handset
+                    } elseif ($resultCode !== null && $resultCode !== '') {
+                        // Non-zero result code returned from Safaricom (e.g. 1032 cancelled, 1037 timeout, 1 insufficient balance, 2001 wrong PIN)
                         $payment->update([
                             'status' => 'failed',
-                            'result_desc' => 'Transaction cancelled by user.',
+                            'result_desc' => $resultDesc ?: 'Transaction failed or cancelled.',
                         ]);
 
-                        \Illuminate\Support\Facades\Log::warning('[M-Pesa Status Check] Payment CANCELLED by user via STK Query', [
+                        \Illuminate\Support\Facades\Log::warning('[M-Pesa Status Check] Payment FAILED/CANCELLED via STK Query', [
                             'checkout_request_id' => $checkoutRequestId,
                             'result_code' => $resultCode,
+                            'result_desc' => $resultDesc,
                         ]);
                     }
-                    // NOTE: Do not set status to 'failed' on 1037 or other transient codes while polling,
-                    // so the user has time to finish entering their PIN on their phone!
                 }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('[M-Pesa Status Check STK Query Exception]', ['error' => $e->getMessage()]);
             }
-        }
-
-        // Sync payment status if document was marked paid
-        if ($payment->status === 'pending' && $payment->document && $payment->document->payment_status === 'paid') {
-            $payment->update([
-                'status' => 'completed',
-                'paid_at' => $payment->paid_at ?? now(),
-            ]);
         }
 
         return response()->json([
@@ -217,9 +208,9 @@ class PaymentController extends Controller
     }
 
     /**
-     * Manually confirm / verify payment if SMS was received.
+     * Manually confirm / verify payment with Safaricom Daraja API.
      */
-    public function verify(string $checkoutRequestId)
+    public function verify(string $checkoutRequestId, MpesaService $mpesa)
     {
         $payment = Payment::where('checkout_request_id', $checkoutRequestId)->first();
 
@@ -227,32 +218,75 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Payment session not found.'], 404);
         }
 
-        if (empty($payment->mpesa_receipt_number)) {
-            $payment->mpesa_receipt_number = 'QK' . strtoupper(Str::random(8));
-        }
-
-        $payment->update([
-            'status' => 'completed',
-            'paid_at' => now(),
-            'result_desc' => 'Verified by user',
-        ]);
-
-        if ($payment->document) {
-            $payment->document->update(['payment_status' => 'paid']);
-        }
-
-        if (!$payment->receipt) {
-            Receipt::create([
-                'payment_id' => $payment->id,
-                'receipt_number' => 'TL-' . strtoupper(Str::random(8)),
-                'download_token' => Str::uuid()->toString(),
+        if ($payment->status === 'completed') {
+            return response()->json([
+                'success' => true,
+                'status' => 'completed',
+                'mpesa_receipt' => $payment->mpesa_receipt_number,
             ]);
         }
 
+        // Query Safaricom Daraja STK Query API before marking as paid
+        try {
+            $queryResult = $mpesa->stkQuery($checkoutRequestId);
+
+            if ($queryResult) {
+                $resultCode = isset($queryResult['ResultCode']) ? (string)$queryResult['ResultCode'] : null;
+                $resultDesc = $queryResult['ResultDesc'] ?? $queryResult['ResponseDescription'] ?? '';
+
+                if ($resultCode === '0') {
+                    // Actual successful payment confirmed by Safaricom
+                    $mpesaReceiptNumber = $queryResult['MpesaReceiptNumber'] ?? $payment->mpesa_receipt_number;
+                    if (empty($mpesaReceiptNumber)) {
+                        $mpesaReceiptNumber = 'MP' . strtoupper(Str::random(8));
+                    }
+
+                    $payment->update([
+                        'status' => 'completed',
+                        'mpesa_receipt_number' => $mpesaReceiptNumber,
+                        'result_desc' => $resultDesc ?: 'Verified via STK Query',
+                        'paid_at' => now(),
+                    ]);
+
+                    if ($payment->document) {
+                        $payment->document->update(['payment_status' => 'paid']);
+                    }
+
+                    if (!$payment->receipt) {
+                        Receipt::create([
+                            'payment_id' => $payment->id,
+                            'receipt_number' => 'TL-' . strtoupper(Str::random(8)),
+                            'download_token' => Str::uuid()->toString(),
+                        ]);
+                    }
+
+                    return response()->json([
+                        'success' => true,
+                        'status' => 'completed',
+                        'mpesa_receipt' => $payment->mpesa_receipt_number,
+                    ]);
+                } else if ($resultCode !== null && $resultCode !== '') {
+                    // STK Push failed or was cancelled by user
+                    $payment->update([
+                        'status' => 'failed',
+                        'result_desc' => $resultDesc ?: 'Transaction cancelled or failed.',
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'status' => 'failed',
+                        'message' => $resultDesc ?: 'Payment was cancelled or failed on M-Pesa. Please try initiating STK push again.',
+                    ], 400);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('[M-Pesa Verify Exception]', ['error' => $e->getMessage()]);
+        }
+
         return response()->json([
-            'success' => true,
-            'status' => 'completed',
-            'mpesa_receipt' => $payment->mpesa_receipt_number,
-        ]);
+            'success' => false,
+            'status' => $payment->status,
+            'message' => 'Payment has not been confirmed by M-Pesa yet. Please ensure you enter your M-Pesa PIN on your phone.',
+        ], 400);
     }
 }

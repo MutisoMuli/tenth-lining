@@ -123,6 +123,8 @@ Route::delete('/api/document/{id}', function (string $id) {
 Route::post('/payment/initiate', [PaymentController::class, 'initiate'])->name('payment.initiate');
 Route::get('/payment/status/{checkoutRequestId}', [PaymentController::class, 'status'])->name('payment.status');
 Route::post('/payment/verify/{checkoutRequestId}', [PaymentController::class, 'verify'])->name('payment.verify');
+Route::post('/api/mpesa/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+Route::post('/mpesa/callback', [PaymentController::class, 'callback']);
 
 // Tool APIs (Merge, Split, Compress, Convert, Organize)
 Route::post('/api/tool/merge/upload', [\App\Http\Controllers\MergePdfController::class, 'upload']);
